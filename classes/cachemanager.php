@@ -16,6 +16,8 @@
 
 namespace mod_learningmap;
 
+use core\clock;
+
 /**
  * Cache manager class for mod_learningmap
  *
@@ -104,7 +106,8 @@ class cachemanager {
 
         if (empty($courseid)) {
             // Finally set the flag to indicate that the cache is properly built.
-            $cache->set('fillstate', time());
+            $clock = \core\di::get(clock::class);
+            $cache->set('fillstate', $clock->time());
         }
     }
 

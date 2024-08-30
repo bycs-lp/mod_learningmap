@@ -16,6 +16,7 @@
 
 namespace mod_learningmap\task;
 
+use core\clock;
 use mod_learningmap\cachemanager;
 
 /**
@@ -48,8 +49,9 @@ class fill_backlink_cache extends \core\task\scheduled_task {
 
         $fillstate = $cache->get('fillstate');
 
+        $clock = \core\di::get(clock::class);
         // If the cache is filled within the last 24 hours, do nothing.
-        if (!empty($fillstate) && $fillstate > time() - 60 * 60 * 24) {
+        if (!empty($fillstate) && $fillstate > $clock->time() - 60 * 60 * 24) {
             mtrace('Backlink cache is already filled within the last 24 hours. Exiting.');
             return;
         }
