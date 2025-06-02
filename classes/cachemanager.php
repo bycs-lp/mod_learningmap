@@ -71,7 +71,7 @@ class cachemanager {
             $conditions['course'] = $courseid;
         }
 
-        $records = $DB->get_recordset('learningmap', $conditions, '', 'id, placestore, backlink, course');
+        $records = $DB->get_recordset('learningmap', $conditions, '', 'id, placestore, backlink, course, showmaponcoursepage');
         foreach ($records as $record) {
             // If course does not exist for some reason, avoid running into errors and try to fix record.
             if (!$DB->record_exists('course', ['id' => $record->course])) {
@@ -87,7 +87,7 @@ class cachemanager {
                 if (!isset($place->linkedActivity)) {
                     continue;
                 }
-                $url = !empty($module->showdescription) ?
+                $url = !empty($record->showmaponcoursepage) ?
                     $coursepageurl->out() :
                     new \moodle_url('/mod/learningmap/view.php', ['id' => $module->id]);
                 $backlinks[$place->linkedActivity][$module->id] = [
