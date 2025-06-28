@@ -73,13 +73,14 @@ class cachemanager {
 
         $records = $DB->get_recordset('learningmap', $conditions, '', 'id, placestore, backlink, course');
         foreach ($records as $record) {
+            // If course does not exist for some reason, avoid running into errors and try to fix record.
+            if (!$DB->record_exists('course', ['id' => $record->course])) {
+                helper::repair_learningmap_record($record->id);
+                continue;
+            }
             $modinfo = get_fast_modinfo($record->course);
             $module = $modinfo->instances['learningmap'][$record->id];
             $placestore = json_decode($record->placestore);
-            // If course does not exist for some reason, avoid running into errors.
-            if (!$DB->record_exists('course', ['id' => $module->course])) {
-                continue;
-            }
             $coursepageurl = course_get_format($module->course)->get_view_url($module->sectionnum);
             $coursepageurl->set_anchor('module-' . $module->id);
             foreach ($placestore->places as $place) {

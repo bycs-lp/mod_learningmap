@@ -39,4 +39,54 @@ class helper {
         $courseformat = $course->format;
         return !empty($showmaponcoursepage) && $courseformat !== 'learningmap';
     }
+
+    /**
+     * Repairs a learning map record by checking if the course exists and updating the record accordingly.
+     *
+     * @param int $learningmapid The ID of the learning map record to repair.
+     * @return void
+     */
+    public static function repair_learningmap_record(int $learningmapid): void {
+        global $DB;
+
+        // Check if the learningmap record exists.
+        if (!$DB->record_exists('learningmap', ['id' => $learningmapid])) {
+            return;
+        }
+
+        // Attempt to repair the learning map record.
+        $record = $DB->get_record('learningmap', ['id' => $learningmapid], '*', MUST_EXIST);
+
+        if (!$DB->record_exists('course', ['id' => $record->course])) {
+            // If the course does not exist, try to find the course from the course module.
+            if (!PHPUNIT_TEST) {
+                mtrace("Course with id {$record->course} does not exist, trying to find it from course module.");
+            }
+            $moduleid = $DB->get_field('modules', 'id', ['name' => 'learningmap']);
+            if ($moduleid) {
+                $courseid = $DB->get_field('course_modules', 'course', ['module' => $moduleid, 'instance' => $record->id]);
+                if ($courseid) {
+                    if ($DB->record_exists('course', ['id' => $courseid])) {
+                        if (!PHPUNIT_TEST) {
+                            mtrace("Updating learning map record to course id {$courseid}.");
+                        }
+                        $record->course = $courseid;
+                        $record->timemodified = time();
+                        $DB->update_record('learningmap', $record);
+                    } else {
+                        if (!PHPUNIT_TEST) {
+                            mtrace(
+                                "Course with id {$courseid} does not exist, learning " .
+                                "map {$record->id} is an orphaned course module."
+                            );
+                        }
+                    }
+                } else {
+                    if (!PHPUNIT_TEST) {
+                        mtrace("No course module found, learning map with id {$record->id} is an orphaned instance.");
+                    }
+                }
+            }
+        }
+    }
 }
