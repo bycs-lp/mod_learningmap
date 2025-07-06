@@ -37,7 +37,7 @@ class mod_learningmap_mod_form extends moodleform_mod {
      * @return void
      */
     public function definition(): void {
-        global $PAGE, $OUTPUT;
+        global $CFG, $OUTPUT;
 
         $mform = &$this->_form;
 
@@ -55,6 +55,9 @@ class mod_learningmap_mod_form extends moodleform_mod {
             $s['coursemodules'] = [];
             foreach ($section as $cmid) {
                 $module = $cm->get_cm($cmid);
+                if ($CFG->branch >= 500 && !plugin_supports('mod', $module->modname, FEATURE_CAN_DISPLAY, true)) {
+                    continue;
+                }
                 // Get only course modules which are not deleted.
                 if ($module->deletioninprogress == 0) {
                     $s['coursemodules'][] = [
