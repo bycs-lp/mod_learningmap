@@ -234,7 +234,7 @@ function learningmap_cm_info_dynamic(cm_info $cm): void {
  * @return void
  */
 function learningmap_cm_info_view(cm_info $cm): void {
-    global $DB, $OUTPUT;
+    global $DB, $OUTPUT, $_REQUEST;
 
     $learningmap = $DB->get_record('learningmap', ['id' => $cm->instance]);
     $intro = '';
@@ -269,6 +269,13 @@ function learningmap_cm_info_view(cm_info $cm): void {
         $contentbeforemap = $groupdropdown . $intro;
         $hascontentbeforemap = !empty($contentbeforemap);
 
+        $mapcontent = null;
+
+        if (!empty($_REQUEST['info']) && $_REQUEST['info'] == 'core_course_get_module') {
+            // If this is an ajax request to get the cm, we need to return only the map code.
+            $mapcontent = learningmap_get_learningmap($cm);
+        }
+
         $mapcontainer = $OUTPUT->render_from_template(
             'mod_learningmap/rendercontainer',
             [
@@ -276,6 +283,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
                 'enableLiveUpdater' => true,
                 'contentbeforemap' => $contentbeforemap,
                 'hascontentbeforemap' => $hascontentbeforemap,
+                'mapcontent' => $mapcontent,
             ]
         );
 
