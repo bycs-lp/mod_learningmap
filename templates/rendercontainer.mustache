@@ -44,13 +44,16 @@
   </div>
   {{/hascontentbeforemap}}
   <div id="learningmap-render-container-{{cmId}}" class="learningmap-render-container">
-    {{> mod_learningmap/loadingplaceholder}}
+    {{^mapcontent}}{{> mod_learningmap/loadingplaceholder}}{{/mapcontent}}
+    {{{mapcontent}}}
   </div>
 </div>
 {{#js}}
+  {{^mapcontent}}
   require(['mod_learningmap/renderer'], function(renderer) {
     renderer.init({{cmId}});
   });
+  {{/mapcontent}}
   {{#enableLiveUpdater}}
       require(['mod_learningmap/initliveupdater'], function(initliveupdater) {
         initliveupdater.init({{cmId}});
