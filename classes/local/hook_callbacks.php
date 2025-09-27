@@ -50,6 +50,10 @@ class hook_callbacks {
     public static function inject_backlinks_into_activity_header(before_http_headers $beforehttpheadershook): void {
         global $OUTPUT, $PAGE;
 
+        if (defined('LEARNINGMAP_NO_BACKLINK')) {
+            return;
+        }
+
         // Don't run during initial install.
         if (during_initial_install()) {
             return;

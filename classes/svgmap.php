@@ -17,6 +17,9 @@
 namespace mod_learningmap;
 
 use DOMDocument;
+use DOMNode;
+use DOMElement;
+use DOMXPath;
 
 /**
  * Class for handling the content of the learningmap
@@ -32,6 +35,11 @@ class svgmap {
      * @var DOMDocument
      */
     protected DOMDocument $dom;
+    /**
+     * DOMXPath for querying the SVG
+     * @var DOMXPath
+     */
+    protected DOMXPath $xpath;
     /**
      * String containing the SVG code (synchronized with $dom)
      * @var string
@@ -54,23 +62,15 @@ class svgmap {
      * @param array $placestore The placestore data to use while processing the map
      */
     public function __construct(string $svgcode, array $placestore) {
-        global $CFG;
         $this->svgcode = $svgcode;
         $this->placestore = $placestore;
-        // This fixes a problem for loading SVG DTD on Windows locally.
-        if (strcasecmp(substr(PHP_OS, 0, 3), 'WIN') == 0) {
-            $dtd = '' . new \moodle_url('/mod/learningmap/pix/svg11.dtd');
-        } else {
-            $dtd = $CFG->dirroot . '/mod/learningmap/pix/svg11.dtd';
-        }
-        $this->prepend = '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "' . $dtd . '">';
 
         $this->dom = new \DOMDocument('1.0', 'UTF-8');
-        $this->dom->validateOnParse = true;
         $this->dom->preserveWhiteSpace = false;
         $this->dom->formatOutput = true;
 
         $this->load_dom();
+        $this->xpath = new \DOMXPath($this->dom);
     }
 
     /**
@@ -80,7 +80,7 @@ class svgmap {
      */
     public function load_dom(): void {
         $this->remove_tags_before_svg();
-        $this->dom->loadXML($this->prepend . $this->svgcode);
+        $this->dom->loadXML($this->svgcode);
     }
 
     /**
@@ -121,7 +121,7 @@ class svgmap {
      * @return void
      */
     public function remove_tags_before_svg(): void {
-        $remove = ['<?xml version="1.0"?>', $this->prepend];
+        $remove = ['<?xml version="1.0"?>'];
         $this->svgcode = str_replace($remove, '', $this->svgcode);
     }
 
@@ -151,7 +151,7 @@ class svgmap {
      * @return ?string null, if element doesn't exist
      */
     public function get_attribute(string $id, string $attribute): ?string {
-        $element = $this->dom->getElementById($id);
+        $element = $this->get_element_by_id($id);
         return $element === null ? null : $element->getAttribute($attribute);
     }
 
@@ -162,7 +162,7 @@ class svgmap {
      * @return void
      */
     public function remove_place_or_path(string $id): void {
-        $placeorpath = $this->dom->getElementById($id);
+        $placeorpath = $this->get_element_by_id($id);
         if ($placeorpath) {
             if ($placeorpath->nodeName == 'circle') {
                 // Also remove connected paths for places.
@@ -186,7 +186,7 @@ class svgmap {
      * @return void
      */
     public function set_link(string $linkid, string $url): void {
-        $link = $this->dom->getElementById($linkid);
+        $link = $this->get_element_by_id($linkid);
         if ($link) {
             $link->setAttribute('xlink:href', $url);
         }
@@ -199,7 +199,7 @@ class svgmap {
      * @return void
      */
     public function remove_link(string $linkid): void {
-        $link = $this->dom->getElementById($linkid);
+        $link = $this->get_element_by_id($linkid);
         if ($link) {
             $link->removeAttribute('xlink:href');
         }
@@ -216,12 +216,12 @@ class svgmap {
     public function update_text_and_title(string $placeid, string $text, string $additionaltitle): void {
         // Set the title element for the link (for accessibility) and for a tooltip when hovering
         // the link.
-        $titlenode = $this->dom->getElementById('title' . $placeid);
+        $titlenode = $this->get_element_by_id('title' . $placeid);
         if ($titlenode) {
             $titlenode->nodeValue = $text . $additionaltitle;
         }
         // Set the text element for the link.
-        $textnode = $this->dom->getElementById('text' . $placeid);
+        $textnode = $this->get_element_by_id('text' . $placeid);
         if ($textnode) {
             $textnode->nodeValue = $text;
         }
@@ -234,7 +234,7 @@ class svgmap {
      * @return void
      */
     public function set_hidden(string $id): void {
-        $placeorpath = $this->dom->getElementById($id);
+        $placeorpath = $this->get_element_by_id($id);
         if ($placeorpath) {
             $placeorpath->setAttribute('class', $placeorpath->getAttribute('class') . ' learningmap-hidden');
         }
@@ -247,7 +247,7 @@ class svgmap {
      * @return void
      */
     public function set_reachable(string $id): void {
-        $placeorpath = $this->dom->getElementById($id);
+        $placeorpath = $this->get_element_by_id($id);
         if ($placeorpath) {
             $placeorpath->setAttribute('class', $placeorpath->getAttribute('class') . ' learningmap-reachable');
         }
@@ -260,7 +260,7 @@ class svgmap {
      * @return void
      */
     public function set_visited(string $id): void {
-        $placeorpath = $this->dom->getElementById($id);
+        $placeorpath = $this->get_element_by_id($id);
         if ($placeorpath) {
             $placeorpath->setAttribute('class', $placeorpath->getAttribute('class') . ' learningmap-visited');
         }
@@ -273,7 +273,7 @@ class svgmap {
      * @return void
      */
     public function set_waygone(string $id): void {
-        $path = $this->dom->getElementById($id);
+        $path = $this->get_element_by_id($id);
         if ($path) {
             $path->setAttribute('class', $path->getAttribute('class') . ' learningmap-waygone');
         }
@@ -286,7 +286,7 @@ class svgmap {
      * @return void
      */
     public function add_checkmark(string $placeid): void {
-        $place = $this->dom->getElementById($placeid);
+        $place = $this->get_element_by_id($placeid);
         if ($place) {
             $x = $place->getAttribute('cx');
             $y = $place->getAttribute('cy');
@@ -306,8 +306,8 @@ class svgmap {
     public function get_coordinates(): array {
         global $CFG;
         $coordinates = [];
-        $pathsgroup = $this->dom->getElementById('pathsGroup');
-        $placesgroup = $this->dom->getElementById('placesGroup');
+        $pathsgroup = $this->get_element_by_id('pathsGroup');
+        $placesgroup = $this->get_element_by_id('placesGroup');
         if (empty($this->placestore['hidepaths'])) {
             // Only processing quadratic bezier curves here as other paths are already handled
             // via the coordinates of the corresponding places.
@@ -335,7 +335,7 @@ class svgmap {
             $cy = intval($placenode->getAttribute('cy'));
             $coordinates[] = ['x' => $cx, 'y' => $cy];
             if ($this->placestore['showtext']) {
-                $text = $this->dom->getElementById('text' . $placenode->getAttribute('id'));
+                $text = $this->get_element_by_id('text' . $placenode->getAttribute('id'));
                 if ($text) {
                     // Delta of the text in relation to the places center coordinates.
                     $dx = $text->getAttribute('dx');
@@ -361,7 +361,7 @@ class svgmap {
     public function add_overlay(): void {
         $coordinates = $this->get_coordinates();
         if (count($coordinates) > 0) {
-            $backgroundnode = $this->dom->getElementById('learningmap-background-image');
+            $backgroundnode = $this->get_element_by_id('learningmap-background-image');
             $height = $backgroundnode->getAttribute('height');
             $c = array_pop($coordinates);
             $minx = $c['x'];
@@ -389,7 +389,7 @@ class svgmap {
             $maxx = min(800, $maxx + $padding);
             $maxy = min($height, $maxy + $padding);
 
-            $placesgroup = $this->dom->getElementById('placesGroup');
+            $placesgroup = $this->get_element_by_id('placesGroup');
 
             // Create the overlay for slicemode.
             $overlay = $this->dom->createElement('path');
@@ -414,6 +414,98 @@ class svgmap {
             $overlay->setAttribute('stroke', 'none');
             $overlay->setAttribute('id', 'learningmap-overlay');
             $placesgroup->appendChild($overlay);
+        }
+    }
+
+    /**
+     * Emulates getElementsByClassname via XPath
+     *
+     * @param string $classname The class name to search for
+     * @return array An array of matching elements
+     */
+    public function get_elements_by_classname(string $classname): array {
+        $elements = $this->xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
+        return iterator_to_array($elements);
+    }
+
+    /**
+     * Emulates getElementById via XPath
+     *
+     * @param string $id The id to search for
+     * @return DOMElement|null The matching element or null if not found
+     */
+    public function get_element_by_id(string $id): ?DOMElement {
+        $elements = $this->xpath->query("//*[@id='$id']");
+        return $elements->length > 0 ? $elements->item(0) : null;
+    }
+
+    /**
+     * Wraps all items with a specific class name in links.
+     *
+     * @param string $classname The class name to search for
+     * @param string $url The URL to link to
+     * @return void
+     */
+    public function wrap_items_in_links(string $classname, string $url): void {
+        $elements = $this->get_elements_by_classname($classname);
+        foreach ($elements as $element) {
+            $this->wrap_element_in_link($element, $url);
+        }
+    }
+
+    /**
+     * Removes all elements with a specific class name.
+     *
+     * @param string $classname The class name to search for
+     * @return void
+     */
+    public function remove_elements_by_classname(string $classname): void {
+        $elements = $this->get_elements_by_classname($classname);
+        foreach ($elements as $element) {
+            $element->parentNode->removeChild($element);
+        }
+    }
+
+        /**
+         * Wraps an item in a link.
+         *
+         * @param string $id Id of a place or path
+         * @param string $url URL to link to
+         * @return void
+         */
+    public function wrap_in_link(string $id, string $url): void {
+        $element = $this->get_element_by_id($id);
+        if ($element) {
+            $this->wrap_element_in_link($element, $url);
+        }
+    }
+
+    /**
+     * Wraps an element in a link.
+     *
+     * @param DOMNode $element The element to wrap
+     * @param string $url The URL to link to
+     * @return void
+     */
+    public function wrap_element_in_link(DOMNode $element, string $url): void {
+        $link = $this->dom->createElement('a');
+        $link->setAttribute('xlink:href', $url);
+        $element->parentNode->insertBefore($link, $element);
+        $link->appendChild($element);
+    }
+
+    /**
+     * Sets an attribute of an element.
+     *
+     * @param string $id The id of the DOM element
+     * @param string $attribute The name of the attribute
+     * @param string $value The value to set the attribute to
+     * @return void
+     */
+    public function set_attribute(string $id, string $attribute, string $value): void {
+        $element = $this->get_element_by_id($id);
+        if ($element) {
+            $element->setAttribute($attribute, $value);
         }
     }
 }

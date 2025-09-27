@@ -52,9 +52,6 @@ to complete the installation from the command line.
 
 ## License ##
 
-The included DTD for SVG is licensed by the World Wide Web Consortium, see copyright
-notice in pix/svg11.dtd
-
 2021 ISB Bayern, Stefan Hanauska <stefan.hanauska@csg-in.de>
 Icon by Dunja Speckner
 Dragging of SVG elements by Peter Collingridge
