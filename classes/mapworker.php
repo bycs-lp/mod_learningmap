@@ -66,7 +66,7 @@ class mapworker {
      *
      * @param string $svgcode The SVG code to build the map from
      * @param array $placestore The placestore data to use while processing the map
-     * @param cm_info|null $cm The course module that belongs to the map (null by default)
+     * @param \cm_info|null $cm The course module that belongs to the map (null by default)
      * @param bool $edit Whether the mapworker should prepare the map for edit mode (false by default)
      * @param int $group Group id to use (default 0 means no group)
      */
@@ -163,17 +163,25 @@ class mapworker {
 
             $placecm = $modinfo->get_cm($place['linkedActivity']);
 
+            $url = '';
             // Set the link URL in the map.
             if (!empty($placecm->url)) {
                 // Link modules that have a view page to their corresponding url.
-                $url = '' . $placecm->url;
+                $url = $placecm->url->out();
             } else {
-                // Other modules (like labels) are shown on the course page. Link to the corresponding anchor.
-                $url = $CFG->wwwroot . '/course/view.php?id=' . $placecm->course .
-                '&section=' . $placecm->sectionnum . '#module-' . $placecm->id;
+                // Other modules (like labels) are shown on the course page.
+                if (empty($this->placestore['usemodal'])) {
+                    // Link to the corresponding anchor.
+                    $url = $CFG->wwwroot . '/course/view.php?id=' . $placecm->course .
+                        '&section=' . $placecm->sectionnum . '#module-' . $placecm->id;
+                }
             }
             if (!$this->edit) {
-                $this->svgmap->set_link($place['linkId'], $url);
+                $this->svgmap->set_attribute($place['linkId'], 'data-cmid', $placecm->id);
+                $this->svgmap->remove_link($place['linkId']);
+                if (!empty($url)) {
+                    $this->svgmap->set_link($place['linkId'], $url);
+                }
             }
             $links[$place['id']] = $place['linkId'];
             $this->svgmap->update_text_and_title(

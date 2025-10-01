@@ -97,5 +97,19 @@ function xmldb_learningmap_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2024072201, 'learningmap');
     }
 
+    if ($oldversion < 2025092200) {
+        // Define field usemodal to be added to learningmap.
+        $table = new xmldb_table('learningmap');
+        $field = new xmldb_field('usemodal', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'showmaponcoursepage');
+
+        // Conditionally launch add field usemodal.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Learningmap savepoint reached.
+        upgrade_mod_savepoint(true, 2025092200, 'learningmap');
+    }
+
     return true;
 }

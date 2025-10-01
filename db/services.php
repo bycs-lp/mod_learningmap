@@ -42,4 +42,12 @@ $functions = [
         'ajax' => true,
         'capabilities' => 'mod/learningmap:view',
     ],
+    'mod_learningmap_get_cm' => [
+        'classname'   => 'mod_learningmap\external\get_cm',
+        'methodname'  => 'execute',
+        'description' => 'Retrieves the course module data',
+        'type'        => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/learningmap:view',
+    ],
 ];

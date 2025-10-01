@@ -234,7 +234,7 @@ function learningmap_cm_info_dynamic(cm_info $cm): void {
  * @return void
  */
 function learningmap_cm_info_view(cm_info $cm): void {
-    global $DB, $OUTPUT;
+    global $DB, $OUTPUT, $_REQUEST;
 
     $learningmap = $DB->get_record('learningmap', ['id' => $cm->instance]);
     $intro = '';
@@ -246,7 +246,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
     }
 
     // Only show map on course page if showmaponcoursepage is set.
-    if (helper::show_map_on_course_page($cm)) {
+    if (helper::show_map_on_course_page($cm) || helper::is_ajax_request()) {
         if (!empty($cm->groupmode)) {
             $groupdropdown = groups_print_activity_menu(
                 $cm,
@@ -269,6 +269,13 @@ function learningmap_cm_info_view(cm_info $cm): void {
         $contentbeforemap = $groupdropdown . $intro;
         $hascontentbeforemap = !empty($contentbeforemap);
 
+        $mapcontent = null;
+
+        if (helper::is_ajax_request()) {
+            // If this is an ajax request to get the cm, we need to return only the map code.
+            $mapcontent = learningmap_get_learningmap($cm);
+        }
+
         $mapcontainer = $OUTPUT->render_from_template(
             'mod_learningmap/rendercontainer',
             [
@@ -276,6 +283,8 @@ function learningmap_cm_info_view(cm_info $cm): void {
                 'enableLiveUpdater' => true,
                 'contentbeforemap' => $contentbeforemap,
                 'hascontentbeforemap' => $hascontentbeforemap,
+                'mapcontent' => $mapcontent,
+                'usemodal' => !empty($learningmap->usemodal) || helper::is_learningmap_format($cm),
             ]
         );
 
@@ -336,6 +345,8 @@ function learningmap_get_learningmap(cm_info $cm): string {
     $placestore = json_decode($map->placestore, true);
 
     $group = (empty($cm->groupmode) ? 0 : groups_get_activity_group($cm, true));
+
+    $placestore['usemodal'] = $map->usemodal ?? 0;
 
     $worker = new \mod_learningmap\mapworker($svg, $placestore, $cm, false, $group);
     $worker->process_map_objects();

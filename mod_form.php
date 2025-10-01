@@ -132,6 +132,15 @@ class mod_learningmap_mod_form extends moodleform_mod {
             $mform->addElement('hidden', 'backlink', 0);
         }
 
+        if ($learningmapformat) {
+            $mform->addElement('hidden', 'usemodal', 1);
+        } else {
+            $mform->addElement('advcheckbox', 'usemodal', get_string('usemodal', 'learningmap'));
+            $mform->addHelpButton('usemodal', 'usemodal', 'learningmap');
+            $mform->setDefault('usemodal', 1);
+        }
+        $mform->setType('usemodal', PARAM_INT);
+
         $mform->addElement(
             'filemanager',
             'backgroundfile',

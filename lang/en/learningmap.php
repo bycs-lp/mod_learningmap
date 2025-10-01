@@ -98,4 +98,6 @@ $string['usecasehelp'] = 'How to use learning maps';
 $string['usecaselink'] = 'Link to a page explaining the use of the learning map';
 $string['usecheckmark'] = 'Checkmark for visited places';
 $string['usecheckmark_help'] = 'This option additionally shows a checkmark in visited places.';
+$string['usemodal'] = 'Use modal to display labels';
+$string['usemodal_help'] = 'Show labels and label-like activities in a modal.';
 $string['visited'] = 'Visited';

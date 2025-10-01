@@ -35,9 +35,19 @@ class helper {
     public static function show_map_on_course_page($cm): bool {
         global $DB;
         $showmaponcoursepage = $DB->get_field('learningmap', 'showmaponcoursepage', ['id' => $cm->instance]);
+        return !empty($showmaponcoursepage) && !self::is_learningmap_format($cm);
+    }
+
+    /**
+     * Checks if the course format of the course the given cm belongs to is 'learningmap'.
+     *
+     * @param cm_info $cm The course module info object.
+     * @return bool True if the course format is 'learningmap', false otherwise.
+     */
+    public static function is_learningmap_format($cm): bool {
         [$course, ] = get_course_and_cm_from_cmid($cm->id);
         $courseformat = $course->format;
-        return !empty($showmaponcoursepage) && $courseformat !== 'learningmap';
+        return $courseformat === 'learningmap';
     }
 
     /**
@@ -88,5 +98,17 @@ class helper {
                 }
             }
         }
+    }
+
+    /**
+     * Determines if the current request is an AJAX request for getting a course module.
+     *
+     * @return bool True if the request is an AJAX request for getting a course module, false otherwise.
+     */
+    public static function is_ajax_request(): bool {
+        global $_REQUEST;
+        return
+            !empty($_REQUEST['info']) &&
+            in_array($_REQUEST['info'], ['core_course_get_module', 'mod_learningmap_get_cm']);
     }
 }
