@@ -16,8 +16,6 @@
 
 namespace mod_learningmap;
 
-use DOMElement;
-
 /**
  * Class for handling the content of the learningmap
  *
@@ -75,7 +73,7 @@ class mapworker {
     public function __construct(
         string $svgcode,
         array $placestore,
-        \cm_info $cm = null, // phpcs:ignore
+        ?\cm_info $cm = null,
         bool $edit = false,
         int $group = 0
     ) {
