@@ -112,7 +112,11 @@ class autoupdate {
         $data = $event->get_data();
         if (isset($data['courseid']) && $data['courseid'] > 0) {
             if (
-                ($data['objecttable'] == 'course' && in_array('format', $data['other']['updatedfields'])) ||
+                (
+                    $data['objecttable'] == 'course' &&
+                    is_array($data['other']['updatedfields']) &&
+                    in_array('format', $data['other']['updatedfields'])
+                ) ||
                 ($data['objecttable'] == 'course_modules' && $data['other']['modulename'] == 'learningmap')
             ) {
                 cachemanager::reset_backlink_cache($data['courseid']);
