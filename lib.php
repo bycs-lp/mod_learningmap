@@ -124,11 +124,6 @@ function learningmap_delete_instance($id): int {
  * @return mixed True if module supports feature, false if not, null if doesn't know or string for the module purpose.
  */
 function learningmap_supports($feature) {
-    // For versions <4.0.
-    if (!defined('FEATURE_MOD_PURPOSE')) {
-        define('FEATURE_MOD_PURPOSE', 'mod_purpose');
-        define('MOD_PURPOSE_CONTENT', 'content');
-    }
     switch ($feature) {
         case FEATURE_IDNUMBER:
             return true;
