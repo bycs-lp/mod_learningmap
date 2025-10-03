@@ -61,7 +61,7 @@ export const init = async(learningmapcmid, inmodal = false) => {
                     modal.show();
                     manualcompletion.init();
                     document.addEventListener(CourseEvents.manualCompletionToggled, () => {
-                        renderLearningmap(learningmapcmid);
+                        renderLearningmap(learningmapcmid, inmodal);
                     });
                 }
             }
