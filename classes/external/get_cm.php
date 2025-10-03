@@ -54,16 +54,15 @@ class get_cm extends external_api {
 
         define('LEARNINGMAP_NO_BACKLINK', true);
 
-        $cm = get_coursemodule_from_id('', $cmid, 0, false, MUST_EXIST);
+        [$course, $cm] = get_course_and_cm_from_cmid($cmid);
         $context = \context_module::instance($cm->id);
-        $course = get_course($cm->course);
         self::validate_context($context);
 
         require_capability('mod/' . $cm->modname . ':view', $context);
 
         $modinfo = get_fast_modinfo($course);
 
-        if (!$cm->uservisible) {
+        if (!$cm->available || !$cm->is_stealth() && $cm->visible == 0) {
             require_capability('moodle/course:viewhiddenactivities', $context);
         }
 
@@ -75,7 +74,16 @@ class get_cm extends external_api {
         $completioninfo = new \completion_info($course);
         $completioninfo->set_module_viewed($cm);
 
-        $data = (array)$cm;
+        $data = [
+            'id' => $cm->id,
+            'course' => $cm->course,
+            'module' => $cm->module,
+            'instance' => $cm->instance,
+            'section' => $cm->sectionnum,
+            'visible' => $cm->visible,
+            'groupmode' => groups_get_activity_groupmode($cm, $course),
+            'groupingid' => $cm->groupingid,
+        ];
 
         // Remove description for labels, because it is already in html.
         if ($cm->modname === 'label') {
