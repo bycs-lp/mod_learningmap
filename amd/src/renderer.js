@@ -61,6 +61,12 @@ export const renderLearningmap = (cmId, inmodal = false) => {
     promises[0].then(data => {
         const targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + (inmodal ? '-modal' : ''));
         targetDiv.innerHTML = data.content;
+        require(['mod_learningmap/linkmodal'], function(linkmodal) {
+            linkmodal.init(cmId, inmodal);
+        });
+        require(['mod_learningmap/initliveupdater'], function(initliveupdater) {
+            initliveupdater.init(cmId, inmodal);
+        });
         return true;
     }).catch((error) => {
         Log.error(error);

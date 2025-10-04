@@ -1,0 +1,37 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_learningmap/description-modal
+
+    Editing modal for the SVG description
+
+    Example context (json):
+    {
+        "title": "Shorter text",
+        "description": "Some description text"
+    }
+}}
+<form class="learningmap_description_form">
+<div>
+    <label for="title">{{#str}}title, mod_learningmap{{/str}}</label>
+    <input name="title" type="text" class="mod_learningmap_description_value" value="{{title}}">
+</div>
+<div>
+    <label for="description">{{#str}}description, mod_learningmap{{/str}}</label>
+    <textarea name="description" class="mod_learningmap_description_value">{{description}}</textarea>
+</div>
+</form>
