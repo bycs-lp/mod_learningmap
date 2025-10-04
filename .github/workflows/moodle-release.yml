@@ -1,0 +1,12 @@
+name: Moodle Plugin Release
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  call-moodle-release-workflow:
+    uses: bycs-lp/moodle-workflows/.github/workflows/moodle-release.yml@master
+    with:
+      plugin-name: 'mod_learningmap'
+    secrets: inherit
