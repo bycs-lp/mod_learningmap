@@ -57,13 +57,23 @@
         <div class="card-text">
             {{#features}}
             <div class="row border-top border-bottom border-light">
-                <div class="col-10">
+                
+                <div class="col-9">
                     <label for="learningmap-advanced-setting-{{name}}">{{title}}</label>
                     {{>core/help_icon}}
                 </div>
+                {{#boolsetting}}
                 <div class="col">
                     <input type="checkbox" id="learningmap-advanced-setting-{{name}}">
                 </div>
+                {{/boolsetting}}
+                {{^boolsetting}}
+                <div class="col">
+                    <a id="learningmap-advanced-setting-{{name}}" role="button" tabindex="0">
+                    {{#pix}}t/edit, core, {{#str}} edit, core{{/str}}{{/pix}}
+                    </a>
+                </div>
+                {{/boolsetting}}
             </div>
             {{/features}}
         </div>

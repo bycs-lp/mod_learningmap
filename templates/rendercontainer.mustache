@@ -37,6 +37,7 @@
         "hascontentbeforemap": true,
         "mapcontent": "<svg>...</svg>",
         "usemodal": true,
+        "inmodal": false,
     }
 }}
 <div class="learningmap-container">
@@ -45,7 +46,7 @@
     {{{contentbeforemap}}}
   </div>
   {{/hascontentbeforemap}}
-  <div id="learningmap-render-container-{{cmId}}" class="learningmap-render-container">
+  <div id="learningmap-render-container-{{cmId}}{{#inmodal}}-modal{{/inmodal}}" class="learningmap-render-container">
     {{^mapcontent}}{{> mod_learningmap/loadingplaceholder}}{{/mapcontent}}
     {{{mapcontent}}}
   </div>
@@ -53,17 +54,17 @@
 {{#js}}
   {{^mapcontent}}
   require(['mod_learningmap/renderer'], function(renderer) {
-    renderer.init({{cmId}});
+    renderer.init({{cmId}}, {{inmodal}});
   });
   {{/mapcontent}}
   {{#usemodal}}
   require(['mod_learningmap/linkmodal'], function(linkmodal) {
-    linkmodal.init({{cmId}});
+    linkmodal.init({{cmId}}, {{inmodal}});
   });
   {{/usemodal}}
   {{#enableLiveUpdater}}
       require(['mod_learningmap/initliveupdater'], function(initliveupdater) {
-        initliveupdater.init({{cmId}});
+        initliveupdater.init({{cmId}}, {{inmodal}});
       });
   {{/enableLiveUpdater}}
 {{/js}}
