@@ -1,6 +1,30 @@
-import {exception as displayException} from 'core/notification';
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Main module for the learningmap editor
+ *
+ * @module     mod_learningmap/learningmap
+ * @copyright  2025 ISB Bayern
+ * @author     Stefan Hanauska <stefan.hanauska@csg-in.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+import {exception as displayException, saveCancel} from 'core/notification';
 import Templates from 'core/templates';
 import placestore from 'mod_learningmap/placestore';
+import * as Str from 'core/str';
 
 const circleRadius = 10;
 
@@ -159,6 +183,7 @@ export const init = () => {
         advancedSettingsLogic('showtext', placestore.getShowText, placestore.setShowText, fixPlaceLabels);
         advancedSettingsLogic('slicemode', placestore.getSliceMode, placestore.setSliceMode);
         advancedSettingsLogic('showwaygone', placestore.getShowWayGone, placestore.setShowWayGone);
+        advancedSettingsLogic('description', getTitleAndDesc, setTitleAndDesc);
     }
 
     // Attach listener to the color choosers
@@ -665,6 +690,7 @@ export const init = () => {
         let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
         link.setAttribute('id', id);
         link.setAttribute('xlink:href', '');
+        link.setAttribute('tabindex', '0');
         link.appendChild(child);
         if (title !== null) {
             link.appendChild(title);
@@ -673,6 +699,52 @@ export const init = () => {
             link.appendChild(text);
         }
         return link;
+    }
+
+    /**
+     * Set the title and description of the svg document.
+     * @param {*} placestore
+     * @param {*} values
+     */
+    function setTitleAndDesc(placestore, values) {
+        let titlenode = svgnode.querySelector('svg>title');
+        if (!titlenode) {
+            titlenode = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            svgnode.appendChild(titlenode);
+        }
+        let titlecontent = svgdoc.createCDATASection(values.title);
+        titlenode.replaceChildren(titlecontent);
+        titlenode.setAttribute('id', 'title-' + placestore.getMapid());
+
+        let descnode = svgnode.querySelector('svg>desc');
+        if (!descnode) {
+            descnode = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+            svgnode.appendChild(descnode);
+        }
+        let desccontent = svgdoc.createCDATASection(values.description);
+        descnode.replaceChildren(desccontent);
+        descnode.setAttribute('id', 'desc-' + placestore.getMapid());
+    }
+
+    /**
+     * Get title and description of the svg document.
+     * @returns object
+     */
+    function getTitleAndDesc() {
+        let title = '';
+        let desc = '';
+        let titlenode = svgnode.querySelector('svg>title');
+        if (titlenode) {
+            title = titlenode.textContent;
+        }
+        let descnode = svgnode.querySelector('svg>desc');
+        if (descnode) {
+            desc = descnode.textContent;
+        }
+        return {
+            title: title,
+            description: desc
+        };
     }
 
     /**
@@ -923,14 +995,42 @@ export const init = () => {
     function advancedSettingsLogic(name, getCall, setCall, callback = null) {
         let settingItem = document.getElementById('learningmap-advanced-setting-' + name);
         if (settingItem) {
-            settingItem.checked = getCall.call(placestore);
-            settingItem.addEventListener('change', function() {
-                setCall.call(placestore, settingItem.checked);
-                if (callback !== null) {
-                    callback();
-                }
-                updateCSS();
-            });
+            if (settingItem.nodeName == 'A') {
+                settingItem.addEventListener('click', function() {
+                    const values = getCall();
+                    Str.get_strings([
+                        {key: 'titleanddescription', component: 'mod_learningmap'},
+                        {key: 'save', component: 'core'},
+                    ]).then((strings) => {
+                        return saveCancel(
+                            strings[0],
+                            Templates.render('mod_learningmap/' + name + '-modal', values),
+                            strings[1],
+                            () => {
+                                let values = {};
+                                let formentries = document.querySelectorAll('.mod_learningmap_' + name + '_value');
+                                formentries.forEach((element) => {
+                                    values[element.name] = element.value;
+                                });
+                                setCall(placestore, values);
+                                if (callback !== null) {
+                                    callback();
+                                }
+                                updateCSS();
+                            }
+                        );
+                    });
+                });
+            } else {
+                settingItem.checked = getCall.call(placestore);
+                settingItem.addEventListener('change', function() {
+                    setCall.call(placestore, settingItem.checked);
+                    if (callback !== null) {
+                        callback();
+                    }
+                    updateCSS();
+                });
+            }
         }
     }
 
