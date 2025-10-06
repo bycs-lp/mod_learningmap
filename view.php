@@ -74,6 +74,7 @@ echo $OUTPUT->render_from_template(
         'hascontentbeforemap' => false,
         'mapcontent' => $mapcontent,
         'usemodal' => !empty($map->usemodal) || helper::is_learningmap_format($cm),
+        'inmodal' => false,
     ]
 );
 

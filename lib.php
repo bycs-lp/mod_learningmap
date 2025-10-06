@@ -280,6 +280,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
                 'hascontentbeforemap' => $hascontentbeforemap,
                 'mapcontent' => $mapcontent,
                 'usemodal' => !empty($learningmap->usemodal) || helper::is_learningmap_format($cm),
+                'inmodal' => helper::is_get_cm_request(),
             ]
         );
 

@@ -111,4 +111,13 @@ class helper {
             !empty($_REQUEST['info']) &&
             in_array($_REQUEST['info'], ['core_course_get_module', 'mod_learningmap_get_cm']);
     }
+
+    /**
+     * Determines if the current request is for the get_cm web service function.
+     *
+     * @return bool True if the request is for the get_cm web service function, false otherwise.
+     */
+    public static function is_get_cm_request(): bool {
+        return !empty($_REQUEST['info']) && $_REQUEST['info'] === 'mod_learningmap_get_cm';
+    }
 }

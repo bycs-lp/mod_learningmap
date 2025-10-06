@@ -32,35 +32,39 @@ import $ from 'jquery';
  * Initialize the link modal listener for a learning map.
  *
  * @param {number} learningmapcmid - The course module ID of the learning map.
+ * @param {boolean} inmodal - Whether the learning map is already in a modal.
  */
-export const init = async(learningmapcmid) => {
-    document.getElementById('learningmap-render-container-' + learningmapcmid).addEventListener('click', async(event) => {
-        const target = event.target.closest('a[data-cmid]');
-        if (target && !target.hasAttribute('xlink:href')) {
-            event.preventDefault();
-            const cmid = target.getAttribute('data-cmid');
-            if (cmid) {
-                const data = await Ajax.call([{
-                    methodname: 'mod_learningmap_get_cm',
-                    args: {
-                        cmid: cmid
-                    },
-                }])[0];
-                let js = $.parseHTML(data.js, null, true).map(node => node.innerHTML).join("\n");
-                const modal = await Modal.create({
-                    title: data.name,
-                    body: data.completion + data.html,
-                    show: false,
-                    removeOnClose: true,
-                    large: true,
-                });
-                modal.bodyJS = js;
-                modal.show();
-                manualcompletion.init();
-                document.addEventListener(CourseEvents.manualCompletionToggled, () => {
-                    renderLearningmap(learningmapcmid);
-                });
+export const init = async(learningmapcmid, inmodal = false) => {
+    const container = document.getElementById('learningmap-render-container-' + learningmapcmid + (inmodal ? '-modal' : ''));
+    if (container) {
+        container.addEventListener('click', async(event) => {
+            const target = event.target.closest('a[data-cmid]');
+            if (target && !target.hasAttribute('xlink:href')) {
+                event.preventDefault();
+                const cmid = target.getAttribute('data-cmid');
+                if (cmid) {
+                    const data = await Ajax.call([{
+                        methodname: 'mod_learningmap_get_cm',
+                        args: {
+                            cmid: cmid
+                        },
+                    }])[0];
+                    let js = $.parseHTML(data.js, null, true).map(node => node.innerHTML).join("\n");
+                    const modal = await Modal.create({
+                        title: data.name,
+                        body: data.completion + data.html,
+                        show: false,
+                        removeOnClose: true,
+                        large: true,
+                    });
+                    modal.bodyJS = js;
+                    modal.show();
+                    manualcompletion.init();
+                    document.addEventListener(CourseEvents.manualCompletionToggled, () => {
+                        renderLearningmap(learningmapcmid);
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 };

@@ -69,6 +69,7 @@ class get_learningmap extends external_api {
             new external_single_structure(
                 [
                     'content' => new external_value(PARAM_RAW, 'Rendered learningmap'),
+                    'completion' => new external_value(PARAM_RAW, 'Activity header HTML code'),
                 ]
             );
     }
@@ -85,6 +86,7 @@ class get_learningmap extends external_api {
      * @throws moodle_exception
      */
     public static function execute(int $cmid): array {
+        global $PAGE, $OUTPUT;
         $params = self::validate_parameters(self::execute_parameters(), ['cmId' => $cmid]);
         $cmid = $params['cmId'];
         [$course, $cminfo] = get_course_and_cm_from_cmid($cmid);
@@ -93,8 +95,19 @@ class get_learningmap extends external_api {
         require_capability('mod/learningmap:view', $context);
         $completion = new \completion_info($course);
         $completion->set_module_viewed($cminfo);
+
+        $PAGE->set_context($context);
+        $PAGE->set_cm($cminfo);
+        $PAGE->set_pagelayout('embedded');
+
+        $completion = $OUTPUT->render_from_template(
+            'core/activity_header',
+            $PAGE->activityheader->export_for_template($OUTPUT)
+        );
+
         return [
             'content' => learningmap_get_learningmap($cminfo),
+            'completion' => $completion,
         ];
     }
 }

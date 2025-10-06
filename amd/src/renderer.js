@@ -33,10 +33,11 @@ export const selectors = {
  * Renders the learningmap into the correct div.
  *
  * @param {number} cmId the course module id of the learningmap
+ * @param {boolean} inmodal whether the learningmap is being rendered in a modal
  */
-export const init = (cmId) => {
+export const init = (cmId, inmodal = false) => {
     const rendererPendingPromise = new Pending('mod_learningmap/renderer-' + cmId);
-    renderLearningmap(cmId);
+    renderLearningmap(cmId, inmodal);
     rendererPendingPromise.resolve();
 };
 
@@ -57,8 +58,15 @@ export const renderLearningmap = (cmId) => {
         ]);
 
     promises[0].then(data => {
-        const targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId);
-        targetDiv.innerHTML = data.content;
+        let targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId);
+        if (targetDiv) {
+            targetDiv.innerHTML = data.content;
+        }
+        targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + '-modal');
+        if (targetDiv) {
+            targetDiv.innerHTML = data.content;
+            targetDiv.parentElement.previousElementSibling.outerHTML = data.completion;
+        }
         return true;
     }).catch((error) => {
         Log.error(error);
