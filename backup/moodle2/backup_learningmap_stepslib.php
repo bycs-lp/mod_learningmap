@@ -43,6 +43,7 @@ class backup_learningmap_activity_structure_step extends backup_activity_structu
                 'backlink',
                 'svgcode',
                 'showmaponcoursepage',
+                'usemodal',
             ]
         );
 
