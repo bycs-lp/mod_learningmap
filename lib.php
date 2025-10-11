@@ -317,6 +317,11 @@ function learningmap_get_place_cm(cm_info $cm): array {
 function learningmap_get_learningmap(cm_info $cm): string {
     global $DB, $OUTPUT;
 
+    // Don't render learningmap if not available and user has no override capability.
+    if (!$cm->available && !has_capability('moodle/course:ignoreavailabilityrestrictions', $cm->context)) {
+        return '';
+    }
+
     $context = context_module::instance($cm->id);
 
     $map = $DB->get_record("learningmap", ["id" => $cm->instance]);
