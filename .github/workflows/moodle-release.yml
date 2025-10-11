@@ -6,7 +6,7 @@ on:
 
 jobs:
   call-moodle-release-workflow:
-    uses: bycs-lp/moodle-workflows/.github/workflows/moodle-release.yml@master
+    uses: bycs-lp/moodle-workflows/.github/workflows/moodle-release.yml@main
     with:
       plugin-name: 'mod_learningmap'
     secrets: inherit
