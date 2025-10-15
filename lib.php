@@ -229,7 +229,7 @@ function learningmap_cm_info_dynamic(cm_info $cm): void {
  * @return void
  */
 function learningmap_cm_info_view(cm_info $cm): void {
-    global $DB, $OUTPUT, $_REQUEST;
+    global $DB, $OUTPUT;
 
     $learningmap = $DB->get_record('learningmap', ['id' => $cm->instance]);
     $intro = '';
@@ -281,6 +281,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
                 'mapcontent' => $mapcontent,
                 'usemodal' => !empty($learningmap->usemodal) || helper::is_learningmap_format($cm),
                 'inmodal' => helper::is_get_cm_request(),
+                'available' => $cm->available || has_capability('moodle/course:ignoreavailabilityrestrictions', $cm->context),
             ]
         );
 
