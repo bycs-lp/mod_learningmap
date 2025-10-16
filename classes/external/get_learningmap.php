@@ -29,6 +29,7 @@ namespace mod_learningmap\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/lib/externallib.php');
 
+use block_html\search\content;
 use coding_exception;
 use context_module;
 use external_api;
@@ -91,6 +92,10 @@ class get_learningmap extends external_api {
         $cmid = $params['cmId'];
         [$course, $cminfo] = get_course_and_cm_from_cmid($cmid);
         $context = context_module::instance($cmid);
+        // Don't render learningmap if not available and user has no override capability.
+        if (!$cminfo->available && !has_capability('moodle/course:ignoreavailabilityrestrictions', $context)) {
+            return ['content' => '', 'completion' => ''];
+        }
         self::validate_context($context);
         require_capability('mod/learningmap:view', $context);
         $completion = new \completion_info($course);
