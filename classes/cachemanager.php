@@ -81,7 +81,7 @@ class cachemanager {
             $modinfo = get_fast_modinfo($record->course);
             $module = $modinfo->instances['learningmap'][$record->id];
             $placestore = json_decode($record->placestore);
-            $coursepageurl = course_get_format($module->course)->get_view_url($module->sectionnum);
+            $coursepageurl = course_get_format($record->course)->get_view_url($module->sectionnum);
             $coursepageurl->set_anchor('module-' . $module->id);
             foreach ($placestore->places as $place) {
                 if (!isset($place->linkedActivity)) {
