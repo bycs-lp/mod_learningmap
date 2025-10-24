@@ -282,6 +282,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
                 'usemodal' => !empty($learningmap->usemodal) || helper::is_learningmap_format($cm),
                 'inmodal' => helper::is_get_cm_request(),
                 'available' => $cm->available || has_capability('moodle/course:ignoreavailabilityrestrictions', $cm->context),
+                'title' => $learningmap->name,
             ]
         );
 
@@ -319,6 +320,7 @@ function learningmap_get_learningmap(cm_info $cm): string {
     global $DB, $OUTPUT;
 
     // Don't render learningmap if not available and user has no override capability.
+    // This is just a safety check, should not happen normally.
     if (!$cm->available && !has_capability('moodle/course:ignoreavailabilityrestrictions', $cm->context)) {
         return '';
     }

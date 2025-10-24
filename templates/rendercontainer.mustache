@@ -39,6 +39,7 @@
         "usemodal": true,
         "inmodal": false,
         "available": true,
+        "title": "Learningmap title"
     }
 }}
 <div class="learningmap-container">
@@ -52,6 +53,9 @@
     {{^mapcontent}}{{> mod_learningmap/loadingplaceholder}}{{/mapcontent}}
     {{{mapcontent}}}
   </div>
+  {{/available}}
+  {{^available}}
+  {{#str}} learningmapnotavailable, mod_learningmap, {{title}} {{/str}}
   {{/available}}
 </div>
 {{#js}}
