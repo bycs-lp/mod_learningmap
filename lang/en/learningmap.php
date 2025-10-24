@@ -63,6 +63,7 @@ $string['intro_help'] = '<ul><li><b>Add a new place:</b> Double click on backgro
 $string['learningmap'] = 'Learning map';
 $string['learningmap:addinstance'] = 'Add a new learning map';
 $string['learningmap:view'] = 'View learning map';
+$string['learningmapnotavailable'] = '"{$a}" is not available';
 $string['loading'] = 'Learningmap is loading...';
 $string['modulename'] = 'Learning map';
 $string['modulename_help'] = 'The learningmap module allows to structure activities in a course as places on a map, connected by paths. Some places are starting places and shown from the beginning. Other places and paths are shown when the activities of the connected places are completed.';

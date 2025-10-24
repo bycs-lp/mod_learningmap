@@ -38,6 +38,8 @@
         "mapcontent": "<svg>...</svg>",
         "usemodal": true,
         "inmodal": false,
+        "available": true,
+        "title": "Learningmap title"
     }
 }}
 <div class="learningmap-container">
@@ -46,12 +48,18 @@
     {{{contentbeforemap}}}
   </div>
   {{/hascontentbeforemap}}
+  {{#available}}
   <div id="learningmap-render-container-{{cmId}}{{#inmodal}}-modal{{/inmodal}}" class="learningmap-render-container">
     {{^mapcontent}}{{> mod_learningmap/loadingplaceholder}}{{/mapcontent}}
     {{{mapcontent}}}
   </div>
+  {{/available}}
+  {{^available}}
+  {{#str}} learningmapnotavailable, mod_learningmap, {{title}} {{/str}}
+  {{/available}}
 </div>
 {{#js}}
+{{#available}}
   {{^mapcontent}}
   require(['mod_learningmap/renderer'], function(renderer) {
     renderer.init({{cmId}}, {{inmodal}});
@@ -67,4 +75,5 @@
         initliveupdater.init({{cmId}}, {{inmodal}});
       });
   {{/enableLiveUpdater}}
+{{/available}}
 {{/js}}
