@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+    <location>amd/src/jscolor.js</location>
+    <name>JSColor</name>
+    <description>JavaScript Color Picker</description>
+    <version>2.5.2</version>
+    <license>GPLv3</license>
+    <repository>https://github.com/EastDesire/jscolor</repository>
+    <copyrights>
+        <copyright>Jan Odvarko - East Desire</copyright>
+    </copyrights>
+    </library>
+    <library>
+        <location>amd/src/svg.js</location>
+        <name>SVG.js</name>
+        <version>3.2.4</version>
+        <license>MIT</license>
+    </library>
+</libraries>

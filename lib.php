@@ -24,21 +24,45 @@
  */
 
 use mod_learningmap\cachemanager;
+use mod_learningmap\helper;
 
 /**
  * Array with all features the plugin supports for advanced settings. Might be moved
  * to another place when in use somewhere else.
  */
 define('LEARNINGMAP_FEATURES', [
-    'hidepaths',
-    'hidestroke',
-    'usecheckmark',
-    'pulse',
-    'hover',
-    'showall',
-    'showtext',
-    'slicemode',
-    'showwaygone',
+    'hidepaths' => 'checkbox',
+    'showall' => 'checkbox',
+    'slicemode' => 'checkbox',
+    'showwaygone' => 'checkbox',
+]);
+
+/**
+ * Array with all feature the plugin supports for place settings. Some of them were located
+ * in LEARNINGMAP_FEATURES (advanced settings) in earlier versions.
+ */
+define('LEARNINGMAP_PLACE_FEATURES', [
+    'placecolor' => 'color',
+    'visitedcolor' => 'color',
+    'strokecolor' => 'color',
+    'textcolor' => 'color',
+    'placeemoji' => 'emoji',
+    'visitedemoji' => 'emoji',
+    'placesize' => 'range',
+    'showtext' => 'checkbox',
+    'hidestroke' => 'checkbox',
+    'usecheckmark' => 'checkbox',
+    'pulse' => 'checkbox',
+    'hover' => 'checkbox',
+]);
+
+/**
+ * Array with all place types.
+ */
+define('LEARNINGMAP_PLACETYPES', [
+    'circle',
+    'square',
+    'emoji',
 ]);
 
 /**
@@ -213,10 +237,8 @@ function learningmap_get_coursemodule_info($cm): cached_cm_info {
  * @return void
  */
 function learningmap_cm_info_dynamic(cm_info $cm): void {
-    global $DB;
-    $showmaponcoursepage = $DB->get_field('learningmap', 'showmaponcoursepage', ['id' => $cm->instance]);
     // Decides whether to display the link.
-    if (!empty($showmaponcoursepage)) {
+    if (helper::show_map_on_course_page($cm)) {
         $cm->set_no_view_link(true);
     }
 }
@@ -241,7 +263,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
     }
 
     // Only show map on course page if showmaponcoursepage is set.
-    if (!empty($learningmap->showmaponcoursepage)) {
+    if (helper::show_map_on_course_page($cm)) {
         if (!empty($cm->groupmode)) {
             $groupdropdown = groups_print_activity_menu(
                 $cm,

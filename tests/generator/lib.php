@@ -31,7 +31,7 @@ class mod_learningmap_generator extends testing_module_generator {
      * @param array|null $options
      * @return stdClass learningmap instance
      */
-    public function create_instance($record = null, array $options = null): stdClass {
+    public function create_instance($record = null, array|null $options = null): stdClass {
         global $CFG;
 
         $record = (array)$record + [

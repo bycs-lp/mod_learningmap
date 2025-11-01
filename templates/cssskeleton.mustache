@@ -42,7 +42,7 @@
         "mapid": "63bee8a5f1a1e",
         "usecheckmark": false,
         "editmode": true,
-        "version": 2024032402,
+        "version": 2024022608,
         "pulse": false,
         "hover": false,
         "showall": false,
@@ -50,7 +50,12 @@
         "slicemode": false
     }
 }}
-<style id="learningmap-svgstyle" type="text/css">
+<style id="{{^cssid}}learningmap-svgstyle{{/cssid}}{{#cssid}}{{cssid}}{{/cssid}}" type="text/css">
+
+#learningmap-svgmap-{{mapid}} {
+    user-select: none;
+    link-decoration: none;
+}
 
 #learningmap-svgmap-{{mapid}} .learningmap-place {
     fill: {{ placecolor }};
@@ -96,7 +101,7 @@
     {{/hidepaths}}
 }
 
-#learningmap-svgmap-{{mapid}} text {
+#learningmap-svgmap-{{mapid}} .learningmap-text-group {
     fill: {{ textcolor }};
     stroke: none;
     font-family: FreeSans;

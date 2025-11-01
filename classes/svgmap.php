@@ -102,17 +102,55 @@ class svgmap {
 
     /**
      * Replaces the svg defs (e.g.) filters or patterns that are defined for use in the document without being directly visible.
-     *
+     * @param array $context Context for the template
      * @return void
      */
-    public function replace_defs(): void {
+    public function replace_defs($context = []): void {
         global $OUTPUT;
         $this->svgcode = preg_replace(
             '/<defs[\s\S]*defs>/i',
-            $OUTPUT->render_from_template('mod_learningmap/svgdefs', []),
+            $OUTPUT->render_from_template('mod_learningmap/svgdefs', $context),
             $this->svgcode
         );
         $this->load_dom();
+    }
+
+    /**
+     * Helper function for upgrade.
+     *
+     * @return void
+     */
+    public function fix_svg(): void {
+        $placesgroup = $this->dom->getElementById('placesGroup');
+        if ($placesgroup) {
+            $placesgroup->setAttribute('id', 'placesGroup-' . $this->placestore['mapid']);
+            $placesgroup->setAttribute('class', 'learningmap-places-group');
+        }
+        $pathsgroup = $this->dom->getElementById('pathsGroup');
+        if ($pathsgroup) {
+            $pathsgroup->setAttribute('mask', 'url(#placemask-' . $this->placestore['mapid'] . ')');
+            $pathsgroup->setAttribute('id', 'pathsGroup-' . $this->placestore['mapid']);
+            $pathsgroup->setAttribute('class', 'learningmap-paths-group');
+        }
+        $backgroundgroup = $this->dom->getElementById('backgroundGroup');
+        if ($backgroundgroup) {
+            $backgroundgroup->setAttribute('id', 'backgroundGroup-' . $this->placestore['mapid']);
+            $backgroundgroup->setAttribute('class', 'learningmap-background-group');
+        }
+        $textgroup = $this->dom->getElementById('textGroup-' . $this->placestore['mapid']);
+        if (!$textgroup) {
+            $textgroup = $this->dom->createElement('g');
+            $textgroup->setAttribute('id', 'textGroup-' . $this->placestore['mapid']);
+            $textgroup->setAttribute('class', 'learningmap-text-group');
+            $this->dom->getElementById('learningmap-svgmap-' . $this->placestore['mapid'])->appendChild($textgroup);
+        }
+        $textelements = $this->dom->getElementsByTagName('text');
+        foreach ($textelements as $textelement) {
+            if (str_starts_with($textelement->getAttribute('id'), 'textp')) {
+                $textgroup->appendChild($textelement);
+            }
+        }
+        $this->save_svg_data();
     }
 
     /**
@@ -156,6 +194,18 @@ class svgmap {
     }
 
     /**
+     * Check if an element is a place
+     *
+     * @param string $id The id of the DOM element
+     * @return bool
+     */
+    public function is_place(string $id): bool {
+        $element = $this->dom->getElementById($id);
+        $classes = explode(' ', $element->getAttribute('class'));
+        return $element !== null && in_array('learningmap-place', $classes);
+    }
+
+    /**
      * Remove a place or path. If removing a place also the link and the connected paths are removed.
      *
      * @param string $id Id of a place or path
@@ -164,12 +214,17 @@ class svgmap {
     public function remove_place_or_path(string $id): void {
         $placeorpath = $this->dom->getElementById($id);
         if ($placeorpath) {
-            if ($placeorpath->nodeName == 'circle') {
+            if (self::is_place($id)) {
                 // Also remove connected paths for places.
                 foreach ($this->placestore['paths'] as $path) {
                     if ($path['sid'] == $id || $path['fid'] == $id) {
                         $this->remove_place_or_path($path['id']);
                     }
+                }
+                // Remove text.
+                $text = $this->dom->getElementById('text' . $id);
+                if ($text) {
+                    $text->parentNode->removeChild($text);
                 }
                 // Make sure that also the link node is removed.
                 $placeorpath = $placeorpath->parentNode;
@@ -307,7 +362,13 @@ class svgmap {
         global $CFG;
         $coordinates = [];
         $pathsgroup = $this->dom->getElementById('pathsGroup');
+        if (!$pathsgroup) {
+            $pathsgroup = $this->dom->getElementById('pathsGroup-' . $this->placestore['mapid']);
+        }
         $placesgroup = $this->dom->getElementById('placesGroup');
+        if (!$placesgroup) {
+            $placesgroup = $this->dom->getElementById('placesGroup-' . $this->placestore['mapid']);
+        }
         if (empty($this->placestore['hidepaths'])) {
             // Only processing quadratic bezier curves here as other paths are already handled
             // via the coordinates of the corresponding places.
@@ -390,6 +451,9 @@ class svgmap {
             $maxy = min($height, $maxy + $padding);
 
             $placesgroup = $this->dom->getElementById('placesGroup');
+            if (!$placesgroup) {
+                $placesgroup = $this->dom->getElementById('placesGroup-' . $this->placestore['mapid']);
+            }
 
             // Create the overlay for slicemode.
             $overlay = $this->dom->createElement('path');

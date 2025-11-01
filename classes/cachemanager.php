@@ -79,6 +79,9 @@ class cachemanager {
             $coursepageurl = course_get_format($module->course)->get_view_url($module->sectionnum);
             $coursepageurl->set_anchor('module-' . $module->id);
             foreach ($placestore->places as $place) {
+                if (!isset($place->linkedActivity)) {
+                    continue;
+                }
                 $url = !empty($module->showdescription) ?
                     $coursepageurl->out() :
                     new \moodle_url('/mod/learningmap/view.php', ['id' => $module->id]);

@@ -31,7 +31,7 @@
 
     Example context (json):
     {
-        "features" : [
+        "advancedfeatures" : [
             {
                 "name": "showtext",
                 "title": "Show activity names",
@@ -47,7 +47,7 @@
         ]
     }
 }}
-<div id="learningmap-advanced-settings" class="card border border-dark" hidden>
+<div id="learningmap-advanced-settings-menu" class="card border border-dark learningmap-menu" hidden>
     <div class="card-body">
         <div class="card-title alert alert-dark">{{#str}} advancedsettings, learningmap {{/str}}
             <button type="button" class="ml-2 mb-1 close" aria-label="Close" id="learningmap-advanced-settings-close">
@@ -55,17 +55,17 @@
              </button>
         </div>
         <div class="card-text">
-            {{#features}}
+            {{#advancedfeatures}}
             <div class="row border-top border-bottom border-light">
                 <div class="col-10">
-                    <label for="learningmap-advanced-setting-{{name}}">{{title}}</label>
+                    <label for="learningmap-advanced-settings-{{name}}">{{title}}</label>
                     {{>core/help_icon}}
                 </div>
                 <div class="col">
-                    <input type="checkbox" id="learningmap-advanced-setting-{{name}}"/>
+                    <input type="{{type}}" id="learningmap-advanced-settings-{{name}}"/>
                 </div>
             </div>
-            {{/features}}
+            {{/advancedfeatures}}
         </div>
     </div>
 </div>

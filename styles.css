@@ -47,17 +47,28 @@
     z-index: 1;
 }
 
-#learningmap-advanced-settings {
-    position: absolute;
-    z-index: 1;
+#learningmap-advanced-settings-menu {
     right: 0;
 }
 
-#learningmap-advanced-settings label {
+#learningmap-place-settings-menu {
+    left: 0;
+}
+
+.learningmap-menu .learningmap-colorpicker {
+    display: none;
+}
+
+.card.learningmap-menu {
+    position: absolute;
+    z-index: 1;
+}
+
+.learningmap-menu label {
     float: left;
 }
 
-#learningmap-advanced-settings label + a {
+.learningmap-menu label + a {
     position: absolute;
     right: 0;
 }
@@ -86,6 +97,13 @@
 
 .learningmap-menubar input[type="color"] {
     width: 2rem;
+}
+
+.learningmap-menubar #learningmap-place-settings-icon {
+    width: 90px;
+    height: 30px;
+    border: 1px solid black;
+    border-radius: .5rem;
 }
 
 .learningmap-editor-main {

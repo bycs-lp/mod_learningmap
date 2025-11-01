@@ -82,22 +82,15 @@
         <div class="learningmap-menubar container border-left border-top border-right border-dark">
             <div class="row m-1">
                 <div class="col">
-                    <label for="learningmap-color-place">{{#str}} places, learningmap {{/str}}</label>
-                </div>
-                <div class="col border-right border-dark">
-                    <input type="color" id="learningmap-color-place"/>
-                </div>
-                <div class="col">
-                    <label for="learningmap-color-visited">{{#str}} visited, learningmap {{/str}}</label>
-                </div>
-                <div class="col border-right border-dark">
-                    <input type="color" id="learningmap-color-visited"/>
-                </div>
-                <div class="col">
-                    <label for="learningmap-color-stroke">{{#str}} paths, learningmap {{/str}}</label>
-                </div>
-                <div class="col border-right border-dark">
-                    <input type="color" id="learningmap-color-stroke"/>
+                    <label for="learningmap-place-settings-icon">{{#str}} places, learningmap {{/str}}</label>
+                    <div id="learningmap-place-settings-icon">
+                        <svg id="learningmap-svgmap-preview" -xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full">
+                            <style id="learningmap-preview-svgstyle">
+                            </style>
+                            <circle class="learningmap-place learningmap-reachable" cx="15" cy="15" r="10" title="unvisited"/>
+                            <circle class="learningmap-place learningmap-visited" cx="40" cy="15" r="10" title="visited"/>
+                        </svg>
+                    </div>
                 </div>
                 <div class="col-sm text-center">
                     <i class="fa fa-cog" id="learningmap-advanced-settings-icon"></i>
@@ -107,6 +100,7 @@
         <div class="learningmap-editor-main">
             {{> mod_learningmap/activityselector }}
             {{> mod_learningmap/advancedsettings }}
+            {{> mod_learningmap/placesettings }}
             <div class="learningmap-mapcontainer learningmap-scaling-svg-container" id="learningmap-editor-map">
             </div>
         </div>

@@ -85,15 +85,29 @@ class mod_learningmap_mod_form extends moodleform_mod {
             )
         );
 
-        $features = [];
-        foreach (LEARNINGMAP_FEATURES as $feature) {
-            $features[] = [
+        $advancedfeatures = [];
+        foreach (LEARNINGMAP_FEATURES as $feature => $type) {
+            $advancedfeatures[] = [
                 'name' => $feature,
                 'title' => get_string($feature, 'learningmap'),
                 'text' => get_string($feature . '_help', 'learningmap'),
                 'alt' => get_string('help'),
+                'type' => $type,
             ];
         }
+
+        $placefeatures = [];
+        foreach (LEARNINGMAP_PLACE_FEATURES as $feature => $type) {
+            $placefeatures[] = [
+                'name' => $feature,
+                'title' => get_string($feature, 'learningmap'),
+                'text' => get_string($feature . '_help', 'learningmap'),
+                'alt' => get_string('help'),
+                'type' => $type,
+                'iscolor' => $type == 'color',
+            ];
+        }
+
         $mform->addElement(
             'html',
             $OUTPUT->render_from_template(
@@ -101,14 +115,22 @@ class mod_learningmap_mod_form extends moodleform_mod {
                 ['sections' => $activitysel,
                 'help' => $OUTPUT->help_icon('intro', 'learningmap', ''),
                 'completiondisabled' => $cm->get_course()->enablecompletion == 0,
-                'features' => $features,
+                'advancedfeatures' => $advancedfeatures,
+                'placefeatures' => $placefeatures,
+                'palette' => get_config('mod_learningmap', 'colorpalette'),
                 ]
             )
         );
 
-        $mform->addElement('advcheckbox', 'showmaponcoursepage', get_string('showmaponcoursepage', 'learningmap'));
+        // If using learningmap course format, the map is never shown on the course page.
+        if ($this->_course->format == 'learningmap') {
+            $mform->addElement('hidden', 'showmaponcoursepage', 0);
+        } else {
+            $mform->addElement('advcheckbox', 'showmaponcoursepage', get_string('showmaponcoursepage', 'learningmap'));
+            $mform->addHelpButton('showmaponcoursepage', 'showmaponcoursepage', 'learningmap');
+        }
+
         $mform->setType('showmaponcoursepage', PARAM_INT);
-        $mform->addHelpButton('showmaponcoursepage', 'showmaponcoursepage', 'learningmap');
 
         $backlinkallowed = get_config('mod_learningmap', 'backlinkallowed');
 
@@ -143,10 +165,11 @@ class mod_learningmap_mod_form extends moodleform_mod {
         $mform->closeHeaderBefore('header');
 
         $PAGE->requires->js_call_amd('mod_learningmap/learningmap', 'init');
+        $PAGE->requires->js_call_amd('mod_learningmap/jscolor');
 
         $this->standard_coursemodule_elements();
 
-        $this->add_action_buttons(true, false, null);
+        $this->add_action_buttons(true, null, null);
 
         $mform->addHelpButton('groupmode', 'groupmode', 'learningmap');
     }
@@ -261,6 +284,8 @@ class mod_learningmap_mod_form extends moodleform_mod {
             );
             $mapworker->process_map_objects();
             $mapworker->replace_stylesheet();
+            $mapworker->replace_defs();
+            $mapworker->fix_svg();
             $defaultvalues['svgcode'] = $mapworker->get_svgcode();
 
             $draftitemid = file_get_submitted_draft_itemid('backgroundfile');

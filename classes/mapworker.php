@@ -16,8 +16,6 @@
 
 namespace mod_learningmap;
 
-use DOMElement;
-
 /**
  * Class for handling the content of the learningmap
  *
@@ -112,7 +110,16 @@ class mapworker {
      * @return void
      */
     public function replace_defs(): void {
-        $this->svgmap->replace_defs();
+        $this->svgmap->replace_defs(['mapid' => $this->placestore['mapid']]);
+    }
+
+    /**
+     * Helper function for upgrade.
+     *
+     * @return void
+     */
+    public function fix_svg(): void {
+        $this->svgmap->fix_svg();
     }
 
     /**
@@ -222,7 +229,7 @@ class mapworker {
             // Make all completed places visible and set color for visited places.
             foreach ($completedplaces as $place) {
                 $this->svgmap->set_visited($place);
-                // If the option "usecheckmark" is selected, add the checkmark to the circle.
+                // If the option "usecheckmark" is selected, add the checkmark to the place.
                 if ($this->placestore['usecheckmark']) {
                     $this->svgmap->add_checkmark($place);
                 }

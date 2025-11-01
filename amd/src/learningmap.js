@@ -1,8 +1,9 @@
 import {exception as displayException} from 'core/notification';
 import Templates from 'core/templates';
 import placestore from 'mod_learningmap/placestore';
-
-const circleRadius = 10;
+import svgjs from 'mod_learningmap/svg';
+import shapes from './shapes';
+import emojiPicker from 'core/emoji/picker';
 
 // Constants for updatePathDeclaration.
 const targetPoints = {
@@ -19,6 +20,9 @@ const pathTypes = {
 export const init = () => {
     // Load the needed template on startup for better execution speed.
     Templates.prefetchTemplates(['mod_learningmap/cssskeleton']);
+
+    // Size for the new circles. This will be overriden by placesize from the placestore.
+    var circleRadius = 10;
 
     // Variable for storing the mouse offset
     var offset;
@@ -56,7 +60,6 @@ export const init = () => {
     let activityStarting = document.getElementById('learningmap-activity-starting');
     let activityTarget = document.getElementById('learningmap-activity-target');
     let activityHiddenWarning = document.getElementById('learningmap-activity-hidden-warning');
-    let advancedSettingsIcon = document.getElementById('learningmap-advanced-settings-icon');
 
     // Hide tree view as there is no preview file we can attach to
     let treeView = document.querySelector('.fp-viewbar .fp-vb-tree');
@@ -123,42 +126,31 @@ export const init = () => {
         placestore.loadJSON(placestoreInput.value);
     }
 
+    updateColorPickers();
+
     // Mark all activities in the placestore as "used".
     updateActivities();
 
-    // Attach listeners to the advanced settings div
-    if (advancedSettingsIcon) {
-        let advancedSettings = document.getElementById('learningmap-advanced-settings');
-        advancedSettingsIcon.addEventListener('click', function() {
-            if (advancedSettings.getAttribute('hidden') === null) {
-                hideAdvancedSettings();
-            } else {
-                advancedSettings.removeAttribute('hidden');
-                hideContextMenu();
-            }
-        });
-        let advancedSettingsClose = document.getElementById('learningmap-advanced-settings-close');
-        if (advancedSettingsClose) {
-            advancedSettingsClose.addEventListener('click', function() {
-                advancedSettings.setAttribute('hidden', '');
-            });
-        }
+    // Inititalize the menus.
+    initMenu('advanced-settings', [
+        {name: 'hidepaths', get: placestore.getHidePaths, set: placestore.setHidePaths},
+        {name: 'showall', get: placestore.getShowall, set: placestore.setShowall},
+        {name: 'slicemode', get: placestore.getSliceMode, set: placestore.setSliceMode},
+        {name: 'showwaygone', get: placestore.getShowWayGone, set: placestore.setShowWayGone},
+    ]);
 
-        advancedSettingsLogic('hidepaths', placestore.getHidePaths, placestore.setHidePaths);
-        advancedSettingsLogic('usecheckmark', placestore.getUseCheckmark, placestore.setUseCheckmark);
-        advancedSettingsLogic('hover', placestore.getHover, placestore.setHover);
-        advancedSettingsLogic('pulse', placestore.getPulse, placestore.setPulse);
-        advancedSettingsLogic('showall', placestore.getShowall, placestore.setShowall);
-        advancedSettingsLogic('hidestroke', placestore.getHideStroke, placestore.setHideStroke);
-        advancedSettingsLogic('showtext', placestore.getShowText, placestore.setShowText, fixPlaceLabels);
-        advancedSettingsLogic('slicemode', placestore.getSliceMode, placestore.setSliceMode);
-        advancedSettingsLogic('showwaygone', placestore.getShowWayGone, placestore.setShowWayGone);
-    }
-
-    // Attach listener to the color choosers
-    colorChooserLogic('stroke', 'text');
-    colorChooserLogic('place');
-    colorChooserLogic('visited');
+    initMenu('place-settings', [
+        {name: 'usecheckmark', get: placestore.getUseCheckmark, set: placestore.setUseCheckmark},
+        {name: 'hover', get: placestore.getHover, set: placestore.setHover},
+        {name: 'pulse', get: placestore.getPulse, set: placestore.setPulse},
+        {name: 'hidestroke', get: placestore.getHideStroke, set: placestore.setHideStroke},
+        {name: 'showtext', get: placestore.getShowText, set: placestore.setShowText, callback: fixPlaceLabels},
+        {name: 'placesize', get: placestore.getPlaceSize, set: placestore.setPlaceSize, callback: updatePlaceSize},
+        {name: 'placecolor', get: placestore.getPlaceColor, set: placestore.setPlaceColor},
+        {name: 'visitedcolor', get: placestore.getVisitedColor, set: placestore.setVisitedColor},
+        {name: 'strokecolor', get: placestore.getStrokeColor, set: placestore.setStrokeColor},
+        {name: 'textcolor', get: placestore.getTextColor, set: placestore.setTextColor},
+    ]);
 
     // Get SVG code from the (hidden) textarea field
     if (code && mapdiv) {
@@ -170,8 +162,9 @@ export const init = () => {
     updateCode();
 
     // Enable dragging of places
-    let svg = document.getElementById('learningmap-svgmap-' + placestore.getMapid());
-    makeDraggable(svg);
+    let svgel = document.getElementById('learningmap-svgmap-' + placestore.getMapid());
+    makeDraggable(svgel);
+    var mapsvg = svgjs().SVG('#learningmap-svgmap-' + placestore.getMapid());
 
     // Refresh stylesheet values from placestore
     updateCSS();
@@ -192,18 +185,19 @@ export const init = () => {
      */
     function showContextMenu(e) {
         unselectAll();
-        hideAdvancedSettings();
+        hideOtherMenus();
         // Check for the existence of the target (could have vanished since the event started).
         if (activitySetting && document.getElementById(e.target.id) !== null) {
             if (e.touches) {
                 e = e.touches[0];
             }
             if (e.target.classList.contains('learningmap-place')) {
+                let element = getSVGShape(e.target.id);
                 e.target.classList.add('learningmap-selected-activity-selector');
                 let activityId = placestore.getActivityId(e.target.id);
                 let scalingFactor = mapdiv.clientWidth / 800;
-                activitySetting.style.setProperty('--pos-x', e.target.cx.baseVal.value * scalingFactor + 'px');
-                activitySetting.style.setProperty('--pos-y', e.target.cy.baseVal.value * scalingFactor + 'px');
+                activitySetting.style.setProperty('--pos-x', element.cx() * scalingFactor + 'px');
+                activitySetting.style.setProperty('--pos-y', element.cy() * scalingFactor + 'px');
                 activitySetting.style.setProperty('--map-width', mapdiv.clientWidth + 'px');
                 activitySetting.style.setProperty('--map-height', mapdiv.clientHeight + 'px');
                 activitySetting.style.display = 'block';
@@ -214,7 +208,7 @@ export const init = () => {
                 updateActivities();
             } else {
                 hideContextMenu();
-                hideAdvancedSettings();
+                hideOtherMenus();
             }
         }
     }
@@ -263,6 +257,20 @@ export const init = () => {
     }
 
     /**
+     * Returns the SVG shape with the given id or representing the
+     * given object.
+     * @param {*} element
+     * @returns
+     */
+    function getSVGShape(element) {
+        if (typeof element === 'object') {
+            return mapsvg.findOne('#' + element.id);
+        } else {
+            return mapsvg.findOne('#' + element);
+        }
+    }
+
+    /**
      * Enables dragging on an DOM node
      * @param {*} el
      */
@@ -292,18 +300,20 @@ export const init = () => {
             pathsToUpdateSecondPoint = [];
             if (evt.target.classList.contains('learningmap-draggable')) {
                 selectedElement = evt.target;
+                let svgel = getSVGShape(selectedElement);
                 offset = getMousePosition(evt);
-                offset.x -= parseInt(selectedElement.getAttributeNS(null, "cx"));
-                offset.y -= parseInt(selectedElement.getAttributeNS(null, "cy"));
+                offset.x -= svgel.cx();
+                offset.y -= svgel.cy();
                 // Get paths that need to be updated.
-                pathsToUpdateFirstPoint = placestore.getPathsWithFid(selectedElement.id);
-                pathsToUpdateSecondPoint = placestore.getPathsWithSid(selectedElement.id);
+                pathsToUpdateFirstPoint = placestore.getPathsWithFid(evt.target.id);
+                pathsToUpdateSecondPoint = placestore.getPathsWithSid(evt.target.id);
             } else if (evt.target.nodeName == 'text') {
                 selectedElement = evt.target;
-                let place = selectedElement.parentNode.querySelector('.learningmap-place');
+                let svgel = getSVGShape(selectedElement);
+                let place = findPlaceForText(selectedElement.id);
                 offset = getMousePosition(evt);
-                offset.x -= parseInt(selectedElement.getAttributeNS(null, "dx")) + place.cx.baseVal.value;
-                offset.y -= parseInt(selectedElement.getAttributeNS(null, "dy")) + place.cy.baseVal.value;
+                offset.x -= svgel.attr('dx') + place.cx();
+                offset.y -= svgel.attr('dy') + place.cy();
             } else if (evt.target.nodeName == 'path') {
                 selectedElement = evt.target;
                 offset = getMousePosition(evt);
@@ -314,7 +324,7 @@ export const init = () => {
         }
 
         /**
-         * Function called during dragging. Continuously updates circles center coordinates and the
+         * Function called during dragging. Continuously updates places center coordinates and the
          * coordinates of the touching paths.
          * @param {*} evt
          */
@@ -328,59 +338,54 @@ export const init = () => {
                 var coord = getMousePosition(evt);
                 let cx = coord.x - offset.x;
                 let cy = coord.y - offset.y;
-                if (selectedElement.nodeName == 'text') {
-                    let place = selectedElement.parentNode.querySelector('.learningmap-place');
-                    // Calculate the delta from the current mouse position to the corresponding place.
-                    // coord: current mouse position
-                    // offset: delta from the mouse position to the coordinates of the text node
-                    let dx = coord.x - offset.x - place.cx.baseVal.value;
-                    let dy = coord.y - offset.y - place.cy.baseVal.value;
-                    selectedElement.setAttributeNS(null, "dx", dx);
-                    selectedElement.setAttributeNS(null, "dy", dy);
-                }
-                if (selectedElement.nodeName == 'path') {
-                    selectedElement.setAttribute(
-                        'd',
-                        updatePathDeclaration(selectedElement.getAttribute('d'), coord.x, coord.y, targetPoints.bezierPoint)
-                    );
-                }
-                if (selectedElement.nodeName == 'circle') {
-                    selectedElement.setAttributeNS(null, "cx", cx);
-                    selectedElement.setAttributeNS(null, "cy", cy);
-                    let textNode = document.getElementById('text' + selectedElement.id);
+                if (selectedElement.classList.contains('learningmap-place')) {
+                    let placeel = mapsvg.findOne('#' + selectedElement.id);
+                    placeel.center(cx, cy);
+                    let textNode = mapsvg.findOne('#text' + selectedElement.id);
                     if (textNode !== null) {
-                        textNode.setAttributeNS(null, 'x', cx);
-                        textNode.setAttributeNS(null, 'y', cy);
+                        textNode.amove(cx, cy);
                     }
                     pathsToUpdateFirstPoint.forEach(function(path) {
-                        let pathNode = document.getElementById(path.id);
-                        if (pathNode !== null) {
-                            if (pathNode.nodeName == 'path') {
-                                pathNode.setAttribute(
-                                    'd',
-                                    updatePathDeclaration(pathNode.getAttribute('d'), cx, cy, targetPoints.firstPoint)
+                        let pathElement = getSVGShape(path);
+                        if (pathElement !== null) {
+                            if (pathElement.type == 'path') {
+                                pathElement.attr(
+                                    {'d': updatePathDeclaration(pathElement.attr('d'), cx, cy, targetPoints.firstPoint)}
                                 );
                             } else {
-                                pathNode.setAttribute('x1', cx);
-                                pathNode.setAttribute('y1', cy);
+                                pathElement.attr({'x1': cx, 'y1': cy});
                             }
                         }
                     });
 
                     pathsToUpdateSecondPoint.forEach(function(path) {
-                        let pathNode = document.getElementById(path.id);
-                        if (pathNode !== null) {
-                            if (pathNode.nodeName == 'path') {
-                                pathNode.setAttribute(
-                                    'd',
-                                    updatePathDeclaration(pathNode.getAttribute('d'), cx, cy, targetPoints.secondPoint)
+                        let pathElement = getSVGShape(path);
+                        if (pathElement !== null) {
+                            if (pathElement.type == 'path') {
+                                pathElement.attr(
+                                    {'d': updatePathDeclaration(pathElement.attr('d'), cx, cy, targetPoints.secondPoint)}
                                 );
                             } else {
-                                pathNode.setAttribute('x2', cx);
-                                pathNode.setAttribute('y2', cy);
+                                pathElement.attr({'x2': cx, 'y2': cy});
                             }
                         }
                     });
+                } else if (selectedElement.nodeName == 'text') {
+                    let textel = getSVGShape(selectedElement);
+                    let place = findPlaceForText(selectedElement.id);
+                    // Calculate the delta from the current mouse position to the corresponding place.
+                    // coord: current mouse position
+                    // offset: delta from the mouse position to the coordinates of the text node
+                    let dx = cx - place.cx();
+                    let dy = cy - place.cy();
+                    // We cannot use the dx() and dy() functions of the text node, because they are not
+                    // setting the attributes dx and dy.
+                    textel.attr({dx: dx, dy: dy});
+                } else if (selectedElement.nodeName == 'path') {
+                    selectedElement.setAttribute(
+                        'd',
+                        updatePathDeclaration(selectedElement.getAttribute('d'), coord.x, coord.y, targetPoints.bezierPoint)
+                    );
                 }
             }
         }
@@ -560,7 +565,7 @@ export const init = () => {
      */
     function dblclickHandler(event) {
         hideContextMenu();
-        hideAdvancedSettings();
+        hideOtherMenus();
         unselectAll();
         if (event.target.classList.contains('learningmap-mapcontainer') ||
             event.target.classList.contains('learningmap-background-image')) {
@@ -584,9 +589,7 @@ export const init = () => {
      * @returns {any}
      */
     function title(id) {
-        let title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.setAttribute('id', id);
-        return title;
+        return mapsvg.element('title').id(id);
     }
 
     /**
@@ -598,34 +601,7 @@ export const init = () => {
      * @returns {any}
      */
      function text(id, content, x, y) {
-        let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('id', id);
-        text.setAttribute('x', x);
-        text.setAttribute('y', y);
-        // Default value for delta: Circle radius * 1.5 (as a padding)
-        text.setAttribute('dx', circleRadius * 1.5);
-        text.setAttribute('dy', circleRadius * 1.5);
-        text.textContent = content;
-        return text;
-    }
-
-    /**
-     * Returns a circle tag with the given dimensions.
-     * @param {*} x x coordinate of the center
-     * @param {*} y y coordinate of the center
-     * @param {*} r radius
-     * @param {*} classes classes to add
-     * @param {*} id id of the circle
-     * @returns {any}
-     */
-    function circle(x, y, r, classes, id) {
-        let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('class', classes);
-        circle.setAttribute('id', id);
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('r', r);
-        return circle;
+        return mapsvg.text().attr({dx: circleRadius * 1.5, dy: circleRadius * 1.5}).plain(content).move(x, y).id(id);
     }
 
     /**
@@ -639,11 +615,7 @@ export const init = () => {
      * @returns {any}
      */
      function path(x1, y1, x2, y2, classes, id) {
-        let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('class', classes);
-        path.setAttribute('id', id);
-        path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2);
-        return path;
+        return mapsvg.path('M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2).attr({'class': classes}).id(id);
     }
 
     /**
@@ -652,21 +624,10 @@ export const init = () => {
      * @param {*} child child item to set the link on
      * @param {*} id id of the link
      * @param {*} title title of the link
-     * @param {*} text text to describe the link
      * @returns {any}
      */
-    function link(child, id, title = null, text = null) {
-        let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
-        link.setAttribute('id', id);
-        link.setAttribute('xlink:href', '');
-        link.appendChild(child);
-        if (title !== null) {
-            link.appendChild(title);
-        }
-        if (text !== null) {
-            link.appendChild(text);
-        }
-        return link;
+    function link(child, id, title = null) {
+        return mapsvg.link('').id(id).add(child).add(title);
     }
 
     /**
@@ -675,7 +636,8 @@ export const init = () => {
      * @param {*} event event causing the command
      */
     function addPlace(event) {
-        let placesgroup = document.getElementById('placesGroup');
+        let placesgroup = mapsvg.findOne('.learningmap-places-group');
+        let textgroup = mapsvg.findOne('.learningmap-text-group');
         let placeId = 'p' + placestore.getId();
         let linkId = 'a' + placestore.getId();
         var CTM = event.target.getScreenCTM();
@@ -684,15 +646,15 @@ export const init = () => {
         }
         let cx = (event.clientX - CTM.e) / CTM.a;
         let cy = (event.clientY - CTM.f) / CTM.d;
-        placesgroup.appendChild(
-            link(
-                circle(cx, cy, circleRadius, 'learningmap-place learningmap-draggable learningmap-emptyplace', placeId),
-                linkId,
-                title('title' + placeId),
-                text('text' + placeId, '', cx, cy)
-            )
+        let svglink = link(
+            shapes.circle(mapsvg, cx, cy, circleRadius, 'learningmap-place learningmap-draggable learningmap-emptyplace', placeId),
+            linkId,
+            title('title' + placeId)
         );
-        placestore.addPlace(placeId, linkId);
+        svglink.addTo(placesgroup);
+        let textNode = text('text' + placeId, '', cx, cy);
+        textNode.addTo(textgroup);
+        placestore.addPlace(placeId, linkId, null, svglink.bbox());
     }
 
     /**
@@ -703,7 +665,7 @@ export const init = () => {
     function clickHandler(event) {
         event.preventDefault();
         hideContextMenu();
-        hideAdvancedSettings();
+        hideOtherMenus();
         if (event.target.classList.contains('learningmap-place') && selectedElement === null) {
             if (firstPlace === null) {
                 firstPlace = event.target.id;
@@ -755,20 +717,19 @@ export const init = () => {
     function addPath(fid, sid) {
         let pid = 'p' + fid + '_' + sid;
         if (document.getElementById(pid) === null) {
-            let pathsgroup = document.getElementById('pathsGroup');
-            let first = document.getElementById('p' + fid);
-            let second = document.getElementById('p' + sid);
+            let pathsgroup = mapsvg.findOne('.learningmap-pathsgroup');
+            let first = mapsvg.findOne('#p' + fid);
+            let second = mapsvg.findOne('#p' + sid);
             if (pathsgroup && first && second) {
-                pathsgroup.appendChild(
-                    path(
-                        first.cx.baseVal.value,
-                        first.cy.baseVal.value,
-                        second.cx.baseVal.value,
-                        second.cy.baseVal.value,
-                        'learningmap-path',
-                        pid
-                    )
+                let svgpath = path(
+                    first.cx(),
+                    first.cy(),
+                    second.cx(),
+                    second.cy(),
+                    'learningmap-path',
+                    pid
                 );
+                svgpath.addTo(pathsgroup);
                 placestore.addPath(pid, 'p' + fid, 'p' + sid);
             }
         }
@@ -781,12 +742,14 @@ export const init = () => {
      * @param {any} event event causing the remove order
      */
     function removePlace(event) {
-        let place = document.getElementById(event.target.id);
-        let parent = place.parentNode;
+        let place = getSVGShape(event.target.id);
         removePathsTouchingPlace(event.target.id);
         placestore.removePlace(event.target.id);
-        parent.removeChild(place);
-        parent.parentNode.removeChild(parent);
+        place.parent().remove();
+        let textNode = document.getElementById('text' + event.target.id);
+        if (textNode) {
+            textNode.remove();
+        }
 
         updateCode();
     }
@@ -808,9 +771,9 @@ export const init = () => {
      * @param {number} id id of the path
      */
     function removePath(id) {
-        let path = document.getElementById(id);
+        let path = getSVGShape(id);
         if (path !== null) {
-            path.parentNode.removeChild(path);
+            path.remove();
             placestore.removePath(id);
         }
     }
@@ -844,7 +807,7 @@ export const init = () => {
                 let height = parseInt(background.getBBox().height);
                 let width = background.getBBox().width;
                 placestore.setBackgroundDimensions(width, height);
-                svg.setAttribute('viewBox', '0 0 ' + placestore.width + ' ' + placestore.height);
+                svgel.setAttribute('viewBox', '0 0 ' + placestore.width + ' ' + placestore.height);
                 background.setAttribute('width', width);
                 background.setAttribute('height', height);
                 updateCode();
@@ -861,6 +824,16 @@ export const init = () => {
             .then(({html, js}) => {
                 Templates.replaceNode('#learningmap-svgstyle', html, js);
                 updateCode();
+                return true;
+            })
+            .catch(ex => displayException(ex));
+        let placestoretemp = placestore.getPlacestore();
+        placestoretemp.mapid = 'preview';
+        placestoretemp.cssid = 'learningmap-preview-svgstyle';
+        placestoretemp.editmode = false;
+        Templates.renderForPromise('mod_learningmap/cssskeleton', placestoretemp)
+            .then(({html, js}) => {
+                Templates.replaceNode('#learningmap-preview-svgstyle', html, js);
                 return true;
             })
             .catch(ex => displayException(ex));
@@ -889,51 +862,12 @@ export const init = () => {
     }
 
     /**
-     * Adds the event listener to the color chooser buttons.
-     * @param {*} name name of the color
-     * @param {*} secondValue name of a second placestore value that has to be changed along
-     */
-    function colorChooserLogic(name, secondValue = '') {
-        let colorChooser = document.getElementById('learningmap-color-' + name);
-        if (colorChooser) {
-            colorChooser.addEventListener('change', function() {
-                placestore.setColor(name, colorChooser.value);
-                if (secondValue != '') {
-                    placestore.setColor(secondValue, colorChooser.value);
-                }
-                updateCSS();
-            });
-            colorChooser.value = placestore.getColor(name);
-        }
-    }
-
-    /**
-     * Adds the event listener to advanced settings menu items
-     * @param {*} name Name of the item
-     * @param {*} getCall Method of placestore to call to read value
-     * @param {*} setCall Method of placestore to call to save value
-     * @param {*} callback Additional callback after value is saved
-     */
-    function advancedSettingsLogic(name, getCall, setCall, callback = null) {
-        let settingItem = document.getElementById('learningmap-advanced-setting-' + name);
-        if (settingItem) {
-            settingItem.checked = getCall.call(placestore);
-            settingItem.addEventListener('change', function() {
-                setCall.call(placestore, settingItem.checked);
-                if (callback !== null) {
-                    callback();
-                }
-                updateCSS();
-            });
-        }
-    }
-
-    /**
      * Adds missing text nodes
      */
     function fixPlaceLabels() {
         let options = Array.from(activitySelector.getElementsByTagName('option'));
         let places = placestore.getPlaces();
+        let textgroup = mapsvg.findOne('.learningmap-text-group');
         for (const place of places) {
             if (document.getElementById('text' + place.id) === null) {
                 let content = '';
@@ -943,18 +877,170 @@ export const init = () => {
                         break;
                     }
                 }
-                let placeNode = document.getElementById(place.id);
-                let textNode = text('text' + place.id, content, placeNode.cx.baseVal.value, placeNode.cy.baseVal.value);
-                placeNode.parentNode.appendChild(textNode);
+                let placeNode = mapsvg.findOne('#' + place.id);
+                let textNode = text('text' + place.id, content, placeNode.cx(), placeNode.cy());
+                textNode.addTo(textgroup);
+            } else {
+                let textNode = mapsvg.findOne('#text' + place.id);
+                textNode.addTo(textgroup);
             }
         }
     }
 
     /**
-     * Hides the advanced settings menu.
+     * Updates the size of the places.
      */
-    function hideAdvancedSettings() {
-        let advancedSettings = document.getElementById('learningmap-advanced-settings');
-        advancedSettings.setAttribute('hidden', '');
+    function updatePlaceSize() {
+        circleRadius = placestore.getPlaceSize();
+        let places = placestore.getPlaces();
+        for (const place of places) {
+            let placeel = getSVGShape(place.id);
+            if (placeel) {
+                let cx = placeel.cx();
+                let cy = placeel.cy();
+                if (placeel.type != 'text') {
+                    placeel.width(circleRadius * 2).height(circleRadius * 2);
+                } else {
+                    placeel.font({size: circleRadius});
+                }
+                placeel.center(cx, cy);
+            }
+        }
+    }
+
+    /**
+     * Initializes a menu with the given features.
+     * @param {*} name Name of the menu
+     * @param {*} features Array with features to add to the menu
+     */
+    function initMenu(name, features) {
+        let icon = document.getElementById('learningmap-' + name + '-icon');
+        if (icon) {
+            icon.addEventListener('click', function() {
+                if (menuIsHidden(name)) {
+                    showMenu(name);
+                } else {
+                    hideMenu(name);
+                }
+            });
+            let close = document.getElementById('learningmap-' + name + '-close');
+            if (close) {
+                close.addEventListener('click', function() {
+                    hideMenu(name);
+                });
+            }
+        }
+        features.forEach(function(feature) {
+            menuItemLogic(name, feature.name, feature.get, feature.set, feature.callback, feature.second);
+        });
+    }
+
+    /**
+     * Returns whether the menu is hidden or not.
+     * @param {*} name Name of the menu
+     * @returns {boolean}
+     */
+    function menuIsHidden(name) {
+        let menu = document.getElementById('learningmap-' + name + '-menu');
+        if (menu) {
+            return menu.getAttribute('hidden') !== null;
+        }
+        return false;
+    }
+
+    /**
+     * Hides the menu with the given name.
+     * @param {*} name Name of the menu
+     */
+    function hideMenu(name) {
+        let menu = document.getElementById('learningmap-' + name + '-menu');
+        if (menu) {
+            menu.setAttribute('hidden', '');
+        }
+    }
+
+    /**
+     * Hides all menus except the one with the given name.
+     * @param {*} name Name of the menu not to hide
+     */
+    function hideOtherMenus(name = '') {
+        let otherMenus = document.querySelectorAll('.learningmap-menu');
+        otherMenus.forEach(function(menu) {
+            if (menu.id != 'learningmap-' + name + '-menu') {
+                menu.setAttribute('hidden', '');
+            }
+        });
+    }
+
+    /**
+     * Shows the menu with the given name.
+     * @param {*} name Name of the menu
+     */
+    function showMenu(name) {
+        let menu = document.getElementById('learningmap-' + name + '-menu');
+        if (menu) {
+            menu.removeAttribute('hidden');
+            updateColorPickers();
+            hideOtherMenus(name);
+            hideContextMenu();
+        }
+    }
+
+    /**
+     * Adds the event listener to menu items
+     * @param {*} type Type of the item (describes the menu where it is located, e.g. advanced-settings, place-settings, ...)
+     * @param {*} name Name of the item
+     * @param {*} getCall Method of placestore to call to read value
+     * @param {*} setCall Method of placestore to call to save value
+     * @param {*} callback Additional callback after value is saved
+     */
+    function menuItemLogic(type, name, getCall, setCall, callback = null) {
+        let menuItem = document.getElementById('learningmap-' + type + '-' + name);
+        if (menuItem) {
+            switch (menuItem.attributes.type.nodeValue) {
+                case 'checkbox':
+                    menuItem.checked = getCall.call(placestore);
+                    menuItem.addEventListener('input', function() {
+                        setCall.call(placestore, menuItem.checked);
+                        if (callback !== null) {
+                            callback();
+                        }
+                        updateCSS();
+                    });
+                break;
+                default:
+                    menuItem.value = getCall.call(placestore);
+                    menuItem.addEventListener('input', function() {
+                        setCall.call(placestore, menuItem.value);
+                        if (callback !== null) {
+                            callback();
+                        }
+                        updateCSS();
+                    });
+            }
+
+        }
+    }
+
+    /**
+     * Updates the color pickers to the current values from the placestore.
+     */
+    function updateColorPickers() {
+        let colorPickers = document.querySelectorAll('[id^="learningmap-place-settings-jscolor-"]');
+        colorPickers.forEach(function(colorpicker) {
+            if (colorpicker.jscolor) {
+                colorpicker.jscolor.fromString(placestore[colorpicker.id.split('jscolor-')[1]]);
+            }
+        });
+    }
+
+    /**
+     * Returns the place that belongs to the given text id.
+     * @param {*} textId
+     * @returns
+     */
+    function findPlaceForText(textId) {
+        let placename = textId.replace('text', '');
+        return mapsvg.findOne('#' + placename);
     }
 };
