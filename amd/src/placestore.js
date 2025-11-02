@@ -1,3 +1,26 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Learningmap placestore
+ *
+ * @module     mod_learningmap/placestore
+ * @copyright  2025 ISB Bayern
+ * @author     Stefan Hanauska <stefan.hanauska@csg-in.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 let placestore = {
     version: 2024072201,
     id: 0,
@@ -5,11 +28,11 @@ let placestore = {
     paths: [],
     startingplaces: [],
     targetplaces: [],
-    placecolor: '#c01c28',
-    strokecolor: '#ffffff',
+    placecolor: '#c01c28ff',
+    strokecolor: '#ffffffff',
     strokeopacity: 1,
-    textcolor: '#ffffff',
-    visitedcolor: '#26a269',
+    textcolor: '#ffffffff',
+    visitedcolor: '#26a269ff',
     height: 100,
     width: 800,
     hidepaths: false,
@@ -22,6 +45,7 @@ let placestore = {
     showtext: false,
     slicemode: false,
     showwaygone: false,
+    placesize: 10,
     /**
      * Loads attributes from JSON into placestore
      * @param {*} json
@@ -50,14 +74,16 @@ let placestore = {
      * @param {*} id id of the place
      * @param {*} linkId id of the corresponding link
      * @param {*} linkedActivity course module id of linked activity
+     * @param {*} bbox bounding box of the place (including text)
      */
-    addPlace: function(id, linkId, linkedActivity = null) {
+    addPlace: function(id, linkId, linkedActivity = null, bbox = {}) {
         this.places.push({
             id: id,
             linkId: linkId,
             linkedActivity: linkedActivity,
             placecolor: null,
-            visitedcolor: null
+            visitedcolor: null,
+            bbox: bbox || {},
         });
         if (this.places.length == 1) {
             this.addStartingPlace(id);
@@ -201,45 +227,6 @@ let placestore = {
         }
     },
     /**
-     * Sets the color of 'stroke', 'place' or 'visited'
-     * @param {*} type type of the color
-     * @param {*} color color in hex format
-     */
-    setColor: function(type, color) {
-        switch (type) {
-            case 'stroke':
-                this.strokecolor = color;
-                break;
-            case 'place':
-                this.placecolor = color;
-                break;
-            case 'visited':
-                this.visitedcolor = color;
-                break;
-            case 'text':
-                this.textcolor = color;
-                break;
-        }
-    },
-    /**
-     * Gets the color of 'stroke', 'place' or 'visited'
-     * @param {*} type type of the color
-     * @returns {string} color in hex format
-     */
-    getColor: function(type) {
-        switch (type) {
-            case 'stroke':
-                return this.strokecolor;
-            case 'place':
-                return this.placecolor;
-            case 'visited':
-                return this.visitedcolor;
-            case 'text':
-                return this.textcolor;
-        }
-        return null;
-    },
-    /**
      * Returns the current id
      * @returns {number}
      */
@@ -304,6 +291,7 @@ let placestore = {
             showtext: this.showtext,
             slicemode: this.slicemode,
             showwaygone: this.showwaygone,
+            placesize: this.placesize,
         };
     },
     /**
@@ -442,7 +430,7 @@ let placestore = {
      * Returns an array with all place identifiers
      * @returns {array}
      */
-     getPlaces: function() {
+    getPlaces: function() {
         return this.places;
     },
     /**
@@ -472,6 +460,90 @@ let placestore = {
      */
     setShowWayGone: function(value) {
         this.showwaygone = value;
+    },
+    /**
+     * Returns the size of places
+     * @returns {number}
+     */
+    getPlaceSize: function() {
+        return this.placesize;
+    },
+    /**
+     * Sets the size of places
+     * @param {number} value
+     */
+    setPlaceSize: function(value) {
+        if (value > 0) {
+            this.placesize = value;
+        }
+    },
+    /**
+     * Sets the color of places
+     * @param {*} color
+     */
+    setPlaceColor: function(color) {
+        this.placecolor = color;
+    },
+    /**
+     * Returns the color of places
+     * @returns {string}
+     */
+    getPlaceColor: function() {
+        return this.placecolor;
+    },
+    /**
+     * Sets the color of visited places
+     * @param {*} color
+     */
+    setVisitedColor: function(color) {
+        this.visitedcolor = color;
+    },
+    /**
+     * Returns the color of visited places
+     * @returns {string}
+     */
+    getVisitedColor: function() {
+        return this.visitedcolor;
+    },
+    /**
+     * Sets the color of strokes and the text
+     * @param {*} color
+     */
+    setStrokeColor: function(color) {
+        this.strokecolor = color;
+    },
+    /**
+     * Returns the color of strokes
+     * @returns {string}
+     */
+    getStrokeColor: function() {
+        return this.strokecolor;
+    },
+    /**
+     * Returns the color of the text
+     * @returns {string}
+     */
+    getTextColor: function() {
+        return this.textcolor;
+    },
+    /**
+     * Sets the color of the text
+     * @param {*} color
+     */
+    setTextColor: function(color) {
+        this.textcolor = color;
+    },
+    getPlaceEmoji: function() {
+        return this.placeemoji;
+    },
+    setPlaceEmoji: function(emoji) {
+        this.placeemoji = emoji;
+    },
+    getVisitedEmoji: function() {
+        return this.visitedemoji;
+    },
+    setVisitedEmoji: function(emoji) {
+        this.visitedemoji = emoji;
     },
 };
 

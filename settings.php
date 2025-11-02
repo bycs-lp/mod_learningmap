@@ -45,4 +45,10 @@ if ($ADMIN->fulltree) {
         get_string('backlinkallowed_desc', 'learningmap'),
         1
     ));
+    $settings->add(new admin_setting_configtext(
+        'mod_learningmap/colorpalette',
+        get_string('colorpalette', 'learningmap'),
+        get_string('colorpalette_desc', 'learningmap'),
+        '#000000 #ffffff #808080 #996e36 #f55525 #ffe438 #88dd20 #22e0cd #269aff #bb1cd4 #ffffff00'
+    ));
 }

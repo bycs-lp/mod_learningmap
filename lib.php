@@ -31,15 +31,38 @@ use mod_learningmap\helper;
  * to another place when in use somewhere else.
  */
 define('LEARNINGMAP_FEATURES', [
-    'hidepaths',
-    'hidestroke',
-    'usecheckmark',
-    'pulse',
-    'hover',
-    'showall',
-    'showtext',
-    'slicemode',
-    'showwaygone',
+    'hidepaths' => 'checkbox',
+    'showall' => 'checkbox',
+    'slicemode' => 'checkbox',
+    'showwaygone' => 'checkbox',
+]);
+
+/**
+ * Array with all feature the plugin supports for place settings. Some of them were located
+ * in LEARNINGMAP_FEATURES (advanced settings) in earlier versions.
+ */
+define('LEARNINGMAP_PLACE_FEATURES', [
+    'placecolor' => 'color',
+    'visitedcolor' => 'color',
+    'strokecolor' => 'color',
+    'textcolor' => 'color',
+    'placeemoji' => 'emoji',
+    'visitedemoji' => 'emoji',
+    'placesize' => 'range',
+    'showtext' => 'checkbox',
+    'hidestroke' => 'checkbox',
+    'usecheckmark' => 'checkbox',
+    'pulse' => 'checkbox',
+    'hover' => 'checkbox',
+]);
+
+/**
+ * Array with all place types.
+ */
+define('LEARNINGMAP_PLACETYPES', [
+    'circle',
+    'square',
+    'emoji',
 ]);
 
 /**

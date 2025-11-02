@@ -37,7 +37,7 @@ class mod_learningmap_mod_form extends moodleform_mod {
      * @return void
      */
     public function definition(): void {
-        global $CFG, $OUTPUT;
+        global $CFG, $OUTPUT, $PAGE;
 
         $mform = &$this->_form;
 
@@ -88,15 +88,30 @@ class mod_learningmap_mod_form extends moodleform_mod {
             )
         );
 
-        $features = [];
-        foreach (LEARNINGMAP_FEATURES as $feature) {
-            $features[] = [
+        $advancedfeatures = [];
+        foreach (LEARNINGMAP_FEATURES as $feature => $type) {
+            $advancedfeatures[] = [
                 'name' => $feature,
                 'title' => get_string($feature, 'learningmap'),
                 'text' => get_string($feature . '_help', 'learningmap'),
                 'alt' => get_string('help'),
+                'type' => $type,
             ];
         }
+
+        $placefeatures = [];
+        foreach (LEARNINGMAP_PLACE_FEATURES as $feature => $type) {
+            $placefeatures[] = [
+                'name' => $feature,
+                'title' => get_string($feature, 'learningmap'),
+                'text' => get_string($feature . '_help', 'learningmap'),
+                'alt' => get_string('help'),
+                'type' => $type,
+                'iscolor' => $type == 'color',
+                'isemoji' => $type == 'emoji',
+            ];
+        }
+
         $mform->addElement(
             'html',
             $OUTPUT->render_from_template(
@@ -104,7 +119,9 @@ class mod_learningmap_mod_form extends moodleform_mod {
                 ['sections' => $activitysel,
                 'help' => $OUTPUT->help_icon('intro', 'learningmap', ''),
                 'completiondisabled' => $cm->get_course()->enablecompletion == 0,
-                'features' => $features,
+                'advancedfeatures' => $advancedfeatures,
+                'placefeatures' => $placefeatures,
+                'palette' => get_config('mod_learningmap', 'colorpalette'),
                 ]
             )
         );
@@ -181,6 +198,7 @@ class mod_learningmap_mod_form extends moodleform_mod {
         // Only load the javascript for the map editor if the general part of the form is shown.
         if (empty($data->showonly) || $data->showonly == 'general') {
             $PAGE->requires->js_call_amd('mod_learningmap/learningmap', 'init');
+            $PAGE->requires->js_call_amd('mod_learningmap/jscolor', 'init');
         }
         $this->_form->_elements[$this->_form->_elementIndex['groupmode']]->removeOption(VISIBLEGROUPS);
         parent::definition_after_data();
@@ -286,6 +304,8 @@ class mod_learningmap_mod_form extends moodleform_mod {
             );
             $mapworker->process_map_objects();
             $mapworker->replace_stylesheet();
+            $mapworker->replace_defs();
+            $mapworker->fix_svg();
             $defaultvalues['svgcode'] = $mapworker->get_svgcode();
 
             $draftitemid = file_get_submitted_draft_itemid('backgroundfile');
