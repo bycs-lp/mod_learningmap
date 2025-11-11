@@ -75,6 +75,8 @@ echo $OUTPUT->render_from_template(
         'mapcontent' => $mapcontent,
         'usemodal' => !empty($map->usemodal) || helper::is_learningmap_format($cm),
         'inmodal' => false,
+        // When rendered on view.php, the map is always available because we checked for availability before.
+        'available' => true,
     ]
 );
 
