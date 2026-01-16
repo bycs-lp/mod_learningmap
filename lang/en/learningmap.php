@@ -66,7 +66,20 @@ $string['learningmap:view'] = 'View learning map';
 $string['learningmapnotavailable'] = '"{$a}" is not available';
 $string['loading'] = 'Learningmap is loading...';
 $string['modulename'] = 'Learning map';
-$string['modulename_help'] = 'The learningmap module allows to structure activities in a course as places on a map, connected by paths. Some places are starting places and shown from the beginning. Other places and paths are shown when the activities of the connected places are completed.';
+$string['modulename_help'] = '###### Key features
+- Visualizes course activities as places on a map connected by paths
+- Gradually reveals new places and paths as activities are completed
+- Supports nested maps for multi-level course structures
+- Offers customizable colors, animations, and display options for places and paths
+- Includes an easy-to-use editor for adding, linking, and organizing activities
+
+###### Ways to use it
+- Create an interactive visual roadmap for course progression
+- Guide learners through dependent activities without complex access restrictions
+- Use nested maps to represent topics, modules, or entire school years
+- Enhance engagement by showing progress with color changes and animations
+- Provide a clear overview of learning paths for individual students or groups';
+$string['modulename_summary'] = 'Visualizes course activities as an interactive map that guides learners through dependent tasks and unlocks new paths as they progress.';
 $string['modulenameplural'] = 'Learning maps';
 $string['name'] = 'Learning map name';
 $string['name_help'] = 'The name of the learning map is only displayed if the "Show map on course page" is not checked.';
