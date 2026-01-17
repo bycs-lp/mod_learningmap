@@ -53,38 +53,6 @@
     right: 0;
 }
 
-#learningmap-advanced-settings .learningmap-advanced-setting-row {
-    flex-wrap: nowrap;
-    text-align: left;
-}
-
-#learningmap-advanced-settings .learningmap-advanced-setting-label {
-    min-width: 0;
-    text-align: left;
-}
-
-#learningmap-advanced-settings .learningmap-advanced-setting-label label {
-    min-width: 0;
-    margin: 0;
-    text-align: left;
-    display: block;
-}
-
-#learningmap-advanced-settings .learningmap-advanced-setting-controls {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0;
-}
-
-#learningmap-advanced-settings .learningmap-advanced-setting-controls > a {
-    margin: 0;
-}
-
-#learningmap-advanced-settings .learningmap-advanced-setting-controls input[type="checkbox"] {
-    margin: 0;
-}
-
 #fitem_id_introeditor_text {
     display: none;
 }

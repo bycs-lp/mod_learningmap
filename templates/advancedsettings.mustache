@@ -56,12 +56,12 @@
         </div>
         <div class="card-text">
             {{#features}}
-            <div class="row border-top border-bottom border-light learningmap-advanced-setting-row align-items-center">
-                <div class="col learningmap-advanced-setting-label">
-                    <label for="learningmap-advanced-setting-{{name}}">{{title}}</label>
+            <div class="row border-top border-bottom border-light align-items-start align-items-md-center">
+                <div class="col-12 col-md text-start">
+                    <label for="learningmap-advanced-setting-{{name}}" class="d-block m-0">{{title}}</label>
                 </div>
-                <div class="col-auto learningmap-advanced-setting-controls">
-                    <input type="checkbox" id="learningmap-advanced-setting-{{name}}">
+                <div class="col-12 col-md-auto d-flex align-items-center justify-content-start justify-content-md-end">
+                    <input type="checkbox" class="m-0" id="learningmap-advanced-setting-{{name}}">
                     {{>core/help_icon}}
                 </div>
             </div>
