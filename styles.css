@@ -51,6 +51,18 @@
     position: absolute;
     z-index: 1;
     right: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    #learningmap-advanced-settings {
+        left: 0;
+        right: 0;
+    }
+}
+
+#learningmap-advanced-settings .col {
+    min-width: 0;
 }
 
 #fitem_id_introeditor_text {
