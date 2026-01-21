@@ -48,21 +48,22 @@
     }
 }}
 <div id="learningmap-advanced-settings" class="card border border-dark" hidden>
-    <div class="card-body">
-        <div class="card-title alert alert-dark">{{#str}} advancedsettings, learningmap {{/str}}
-            <button type="button" class="ml-2 mb-1 close" aria-label="Close" id="learningmap-advanced-settings-close">
+    <div class="card-body p-2">
+        <div class="card-header alert alert-dark d-flex align-items-center justify-content-between">
+            <span>{{#str}} advancedsettings, learningmap {{/str}}</span>
+            <button type="button" class="mb-1 close" aria-label="{{#str}} closebuttontitle {{/str}}" id="learningmap-advanced-settings-close">
                 <span>&times;</span>
-             </button>
+            </button>
         </div>
         <div class="card-text">
             {{#features}}
-            <div class="row border-top border-bottom border-light">
-                <div class="col-10">
-                    <label for="learningmap-advanced-setting-{{name}}">{{title}}</label>
-                    {{>core/help_icon}}
+            <div class="row border-top border-bottom border-light align-items-center flex-nowrap mx-0">
+                <div class="col px-2">
+                    <label for="learningmap-advanced-setting-{{name}}" class="d-block m-0 text-truncate">{{title}}</label>
                 </div>
-                <div class="col">
-                    <input type="checkbox" id="learningmap-advanced-setting-{{name}}">
+                <div class="col-auto d-flex align-items-center px-0">
+                    <input type="checkbox" class="m-0" id="learningmap-advanced-setting-{{name}}">
+                    <span class="ml-2">{{>core/help_icon}}</span>
                 </div>
             </div>
             {{/features}}
