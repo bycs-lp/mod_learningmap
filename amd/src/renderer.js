@@ -45,8 +45,9 @@ export const init = (cmId, inmodal = false) => {
  * Render the learningmap with the given cmId into the corresponding div in the DOM.
  *
  * @param {number} cmId the course module id of the learningmap
+ * @param {boolean} inmodal whether the learningmap is being rendered in a modal
  */
-export const renderLearningmap = (cmId) => {
+export const renderLearningmap = (cmId, inmodal = false) => {
     const promises = Ajax.call(
         [
             {
@@ -58,15 +59,14 @@ export const renderLearningmap = (cmId) => {
         ]);
 
     promises[0].then(data => {
-        let targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId);
-        if (targetDiv) {
-            targetDiv.innerHTML = data.content;
-        }
-        targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + '-modal');
-        if (targetDiv) {
-            targetDiv.innerHTML = data.content;
-            targetDiv.parentElement.previousElementSibling.outerHTML = data.completion;
-        }
+        const targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + (inmodal ? '-modal' : ''));
+        targetDiv.innerHTML = data.content;
+        require(['mod_learningmap/linkmodal'], function(linkmodal) {
+            linkmodal.init(cmId, inmodal);
+        });
+        require(['mod_learningmap/initliveupdater'], function(initliveupdater) {
+            initliveupdater.init(cmId, inmodal);
+        });
         return true;
     }).catch((error) => {
         Log.error(error);
