@@ -57,13 +57,20 @@
         </div>
         <div class="card-text">
             {{#features}}
-            <div class="row border-top border-bottom border-light align-items-center flex-nowrap mx-0">
+            <div class="row border-top border-bottom border-light text-start flex-nowrap mx-0">
                 <div class="col px-2">
-                    <label for="learningmap-advanced-setting-{{name}}" class="d-block m-0 text-truncate">{{title}}</label>
-                </div>
-                <div class="col-auto d-flex align-items-center px-0">
-                    <input type="checkbox" class="m-0" id="learningmap-advanced-setting-{{name}}">
-                    <span class="ml-2">{{>core/help_icon}}</span>
+                    <label for="learningmap-advanced-setting-{{name}}">{{title}}</label>
+                </div>                
+                <div class="col-auto d-flex px-0">
+                {{#boolsetting}}
+                    <input type="checkbox" id="learningmap-advanced-setting-{{name}}">
+                {{/boolsetting}}
+                {{^boolsetting}}
+                    <a id="learningmap-advanced-setting-{{name}}" role="button" tabindex="0">
+                    {{#pix}}t/edit, core, {{#str}} edit, core{{/str}}{{/pix}}
+                    </a>
+                {{/boolsetting}}
+                {{>core/help_icon}}
                 </div>
             </div>
             {{/features}}
