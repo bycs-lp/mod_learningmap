@@ -58,6 +58,10 @@ class mod_learningmap_mod_form extends moodleform_mod {
                 if ($CFG->branch >= 500 && !plugin_supports('mod', $module->modname, FEATURE_CAN_DISPLAY, true)) {
                     continue;
                 }
+                if (isset($this->_cm->id) && $this->_cm->id == $cmid) {
+                    // Do not include the learningmap itself.
+                    continue;
+                }
                 // Get only course modules which are not deleted.
                 if ($module->deletioninprogress == 0) {
                     $s['coursemodules'][] = [

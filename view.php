@@ -70,7 +70,7 @@ echo $OUTPUT->render_from_template(
         'enableLiveUpdater' => false,
         'contentbeforemap' => '',
         'hascontentbeforemap' => false,
-        'mapcontent' => null,
+        'mapcontent' => null, // For now the map content is always loaded via AJAX (due to problems with CDATA content in Chrome).
         'usemodal' => !empty($map->usemodal) || helper::is_learningmap_format($cm),
         'inmodal' => false,
         // When rendered on view.php, the map is always available because we checked for availability before.
