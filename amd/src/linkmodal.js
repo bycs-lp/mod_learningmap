@@ -18,7 +18,6 @@ import Ajax from 'core/ajax';
 import * as manualcompletion from 'core_course/manual_completion_toggle';
 import {renderLearningmap} from 'mod_learningmap/renderer';
 import CourseEvents from 'core_course/events';
-import $ from 'jquery';
 
 /**
  * Helper for opening course modules in a modal that do not have a view page.
@@ -80,7 +79,11 @@ export const openModal = async(event, learningmapcmid, inmodal) => {
                     cmid: cmid
                 },
             }])[0];
-            let js = $.parseHTML(data.js, null, true).map(node => node.innerHTML).join("\n");
+            const container = document.createElement('div');
+            container.innerHTML = data.js;
+            let js = Array.from(container.querySelectorAll('script'))
+                .map(s => s.textContent || '')
+                .join('\n');
             const modal = await Modal.create({
                 title: data.name,
                 body: data.completion + data.html,
