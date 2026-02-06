@@ -1002,7 +1002,7 @@ export const init = () => {
         let settingItem = document.getElementById('learningmap-advanced-setting-' + name);
         if (settingItem) {
             if (settingItem.nodeName == 'A') {
-                settingItem.addEventListener('click', function() {
+                const descriptionHandler = () => {
                     const values = getCall();
                     Str.get_strings([
                         {key: 'titleanddescription', component: 'mod_learningmap'},
@@ -1027,6 +1027,12 @@ export const init = () => {
                             }
                         );
                     }).catch(ex => displayException(ex));
+                };
+                settingItem.addEventListener('click', descriptionHandler);
+                settingItem.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        descriptionHandler();
+                    }
                 });
             } else {
                 settingItem.checked = getCall.call(placestore);
