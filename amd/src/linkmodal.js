@@ -37,24 +37,24 @@ import $ from 'jquery';
 export const init = async(learningmapcmid, inmodal = false) => {
     const container = document.getElementById('learningmap-render-container-' + learningmapcmid + (inmodal ? '-modal' : ''));
     if (container) {
-        container.addEventListener('click', async(event) => {
+        container.addEventListener('click', async (event) => {
             const target = event.target.closest('a[data-cmid]');
             if (target && !target.hasAttribute('xlink:href')) {
                 event.preventDefault();
                 const cmid = target.getAttribute('data-cmid');
                 if (cmid) {
-                    openModal(event, learningmapcmid, inmodal);
+                    await openModal(event, learningmapcmid, inmodal);
                 }
             }
         });
-        container.addEventListener('keydown', (event) => {
+        container.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
                 const target = event.target.closest('a[data-cmid]');
                 if (target && !target.hasAttribute('xlink:href')) {
                     event.preventDefault();
                     const cmid = target.getAttribute('data-cmid');
                     if (cmid) {
-                        openModal(event, learningmapcmid, inmodal);
+                        await openModal(event, learningmapcmid, inmodal);
                     }
                 }
             }

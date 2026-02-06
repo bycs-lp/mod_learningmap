@@ -40,7 +40,7 @@ const pathTypes = {
     quadraticbezier: 2,
 };
 
-export const init = () => {
+export const init = async () => {
     // Load the needed template on startup for better execution speed.
     Templates.prefetchTemplates(['mod_learningmap/cssskeleton']);
 
@@ -180,16 +180,16 @@ export const init = () => {
             });
         }
 
-        advancedSettingsLogic('hidepaths', placestore.getHidePaths, placestore.setHidePaths);
-        advancedSettingsLogic('usecheckmark', placestore.getUseCheckmark, placestore.setUseCheckmark);
-        advancedSettingsLogic('hover', placestore.getHover, placestore.setHover);
-        advancedSettingsLogic('pulse', placestore.getPulse, placestore.setPulse);
-        advancedSettingsLogic('showall', placestore.getShowall, placestore.setShowall);
-        advancedSettingsLogic('hidestroke', placestore.getHideStroke, placestore.setHideStroke);
-        advancedSettingsLogic('showtext', placestore.getShowText, placestore.setShowText, fixPlaceLabels);
-        advancedSettingsLogic('slicemode', placestore.getSliceMode, placestore.setSliceMode);
-        advancedSettingsLogic('showwaygone', placestore.getShowWayGone, placestore.setShowWayGone);
-        advancedSettingsLogic('description', getTitleAndDesc, setTitleAndDesc);
+        await advancedSettingsLogic('hidepaths', placestore.getHidePaths, placestore.setHidePaths);
+        await advancedSettingsLogic('usecheckmark', placestore.getUseCheckmark, placestore.setUseCheckmark);
+        await advancedSettingsLogic('hover', placestore.getHover, placestore.setHover);
+        await advancedSettingsLogic('pulse', placestore.getPulse, placestore.setPulse);
+        await advancedSettingsLogic('showall', placestore.getShowall, placestore.setShowall);
+        await advancedSettingsLogic('hidestroke', placestore.getHideStroke, placestore.setHideStroke);
+        await advancedSettingsLogic('showtext', placestore.getShowText, placestore.setShowText, fixPlaceLabels);
+        await advancedSettingsLogic('slicemode', placestore.getSliceMode, placestore.setSliceMode);
+        await advancedSettingsLogic('showwaygone', placestore.getShowWayGone, placestore.setShowWayGone);
+        await advancedSettingsLogic('description', getTitleAndDesc, setTitleAndDesc);
     }
 
     // Attach listener to the color choosers
@@ -998,16 +998,19 @@ export const init = () => {
      * @param {*} setCall Method of placestore to call to save value
      * @param {*} callback Additional callback after value is saved
      */
-    function advancedSettingsLogic(name, getCall, setCall, callback = null) {
+    async function advancedSettingsLogic(name, getCall, setCall, callback = null) {
         let settingItem = document.getElementById('learningmap-advanced-setting-' + name);
         if (settingItem) {
+            // Settings that need a modal for editing (e.g. title and description) have a link to
+            // open the modal, other settings have a checkbox.
             if (settingItem.nodeName == 'A') {
-                const descriptionHandler = () => {
+                const descriptionHandler = async () => {
                     const values = getCall();
-                    Str.get_strings([
-                        {key: 'titleanddescription', component: 'mod_learningmap'},
-                        {key: 'save', component: 'core'},
-                    ]).then((strings) => {
+                    try {
+                        const strings = await Str.get_strings([
+                            {key: 'titleanddescription', component: 'mod_learningmap'},
+                            {key: 'save', component: 'core'},
+                        ]);
                         return saveCancel(
                             strings[0],
                             Templates.render('mod_learningmap/' + name + '-modal', values),
@@ -1026,7 +1029,9 @@ export const init = () => {
                                 updateCSS();
                             }
                         );
-                    }).catch(ex => displayException(ex));
+                    } catch (ex) {
+                        displayException(ex);
+                    }
                 };
                 settingItem.addEventListener('click', descriptionHandler);
                 settingItem.addEventListener('keypress', (e) => {
@@ -1034,6 +1039,7 @@ export const init = () => {
                         descriptionHandler();
                     }
                 });
+            // Boolean settings can be directly changed with a checkbox in the advanced settings menu.
             } else {
                 settingItem.checked = getCall.call(placestore);
                 settingItem.addEventListener('change', function() {
