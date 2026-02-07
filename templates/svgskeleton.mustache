@@ -47,10 +47,13 @@
     "hidepaths":false,
     "mapid":"61e7dad7afb67",
     "usecheckmark":false,
-    "editmode":true
+    "editmode":true,
+    "description": "Description of the background image"
     }
 }}
-<svg id="learningmap-svgmap-{{mapid}}" class="learningmap-scaling-svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full">
+<svg id="learningmap-svgmap-{{mapid}}" class="learningmap-scaling-svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full" role="application" aria-labelledby="title-{{mapid}} desc-{{mapid}}">
+<title id="title-{{mapid}}"></title>
+<desc id="desc-{{mapid}}"></desc>
 {{> mod_learningmap/svgdefs }}
 {{> mod_learningmap/cssskeleton }}
 <g id="backgroundGroup">

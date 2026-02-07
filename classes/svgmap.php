@@ -228,6 +228,32 @@ class svgmap {
     }
 
     /**
+     * Updates the title element of a place or path.
+     *
+     * @param string $id Id of a place or path
+     * @param string $text Text to set the title element to
+     * @return void
+     */
+    public function update_title(string $id, string $text): void {
+        $node = $this->get_element_by_id($id);
+        if ($node) {
+            $titlenode = null;
+            foreach ($node->childNodes as $child) {
+                if ($child->nodeName == 'title') {
+                    $titlenode = $child;
+                    break;
+                }
+            }
+            if ($titlenode) {
+                $titlenode->nodeValue = $text;
+            } else {
+                $titlenode = $this->dom->createElementNS('http://www.w3.org/2000/svg', 'title', $text);
+                $node->insertBefore($titlenode, $node->firstChild);
+            }
+        }
+    }
+
+    /**
      * Adds the learningmap-hidden class to a place or path.
      *
      * @param string $id Id of a place or path

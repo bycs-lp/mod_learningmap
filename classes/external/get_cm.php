@@ -83,6 +83,7 @@ class get_cm extends external_api {
             'visible' => $cm->visible,
             'groupmode' => groups_get_activity_groupmode($cm, $course),
             'groupingid' => $cm->groupingid,
+            'modname' => $cm->modname,
         ];
 
         // Remove description for labels, because it is already in html.
@@ -124,6 +125,7 @@ class get_cm extends external_api {
                 'html' => new external_value(PARAM_RAW, 'Course module html'),
                 'js' => new external_value(PARAM_RAW, 'Course module javascript'),
                 'completion' => new external_value(PARAM_RAW, 'Completion html'),
+                'modname' => new external_value(PARAM_TEXT, 'Module name'),
             ]
         );
     }
