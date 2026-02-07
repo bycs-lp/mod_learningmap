@@ -40,7 +40,7 @@ const pathTypes = {
     quadraticbezier: 2,
 };
 
-export const init = async () => {
+export const init = async() => {
     // Load the needed template on startup for better execution speed.
     Templates.prefetchTemplates(['mod_learningmap/cssskeleton']);
 
@@ -1004,7 +1004,7 @@ export const init = async () => {
             // Settings that need a modal for editing (e.g. title and description) have a link to
             // open the modal, other settings have a checkbox.
             if (settingItem.nodeName == 'A') {
-                const descriptionHandler = async () => {
+                const descriptionHandler = async() => {
                     const values = getCall();
                     try {
                         const strings = await Str.get_strings([
@@ -1023,7 +1023,6 @@ export const init = async () => {
                                 });
                                 setCall(placestore, values);
                                 if (callback !== null) {
-                                    // eslint-disable-next-line promise/no-callback-in-promise
                                     callback();
                                 }
                                 updateCSS();
@@ -1031,6 +1030,7 @@ export const init = async () => {
                         );
                     } catch (ex) {
                         displayException(ex);
+                        return null;
                     }
                 };
                 settingItem.addEventListener('click', descriptionHandler);
