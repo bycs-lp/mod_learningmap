@@ -79,13 +79,18 @@ class mapworker {
     ) {
         global $USER;
         $svgcode = preg_replace(
-            '/<text(.*)>(?!(<\!\[CDATA\[))(.*)<\/text>/',
+            '/<text([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/text>/',
             '<text$1><![CDATA[$3]]></text>',
             $svgcode
         );
         $svgcode = preg_replace(
-            '/<title(.*)>(?!(<\!\[CDATA\[))(.*)<\/title>/',
+            '/<title([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/title>/',
             '<title$1><![CDATA[$3]]></title>',
+            $svgcode
+        );
+        $svgcode = preg_replace(
+            '/<desc([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/desc>/',
+            '<desc$1><![CDATA[$3]]></desc>',
             $svgcode
         );
         $this->edit = $edit;
@@ -140,7 +145,7 @@ class mapworker {
         $impossible = [];
         $allplaces = [];
         $links = [];
-
+        $placenames = [];
         $modinfo = get_fast_modinfo($this->cm->get_course(), $USER->id);
 
         $allcms = array_keys($modinfo->get_cms());
@@ -178,15 +183,17 @@ class mapworker {
             }
             if (!$this->edit) {
                 $this->svgmap->set_attribute($place['linkId'], 'data-cmid', $placecm->id);
+                $this->svgmap->set_attribute($place['linkId'], 'tabindex', '0');
                 $this->svgmap->remove_link($place['linkId']);
                 if (!empty($url)) {
                     $this->svgmap->set_link($place['linkId'], $url);
                 }
             }
             $links[$place['id']] = $place['linkId'];
+            $placenames[$place['id']] = $placecm->get_formatted_name();
             $this->svgmap->update_text_and_title(
                 $place['id'],
-                $placecm->get_formatted_name(),
+                $placenames[$place['id']],
                 // Add info to target places (for accessibility).
                 in_array($place['id'], $this->placestore['targetplaces']) ?
                 ' (' . get_string('targetplace', 'learningmap') . ')' :
@@ -215,6 +222,13 @@ class mapworker {
         }
         if (!($this->edit)) {
             foreach ($this->placestore['paths'] as $path) {
+                $this->svgmap->update_title(
+                    $path['id'],
+                    get_string('pathtitle', 'mod_learningmap', [
+                        'from' => $placenames[$path['sid']],
+                        'to' => $placenames[$path['fid']],
+                    ])
+                );
                 // If the beginning or the ending of the path is a completed place and this place is available,
                 // show path and the place on the other end.
                 if (in_array($path['sid'], $completedplaces) || in_array($path['fid'], $completedplaces)) {
@@ -278,6 +292,12 @@ class mapworker {
                 }
             }
         }
+        $this->svgmap->set_attribute('learningmap-svgmap-' . $this->placestore['mapid'], 'role', 'application');
+        $this->svgmap->set_attribute(
+            'learningmap-svgmap-' . $this->placestore['mapid'],
+            'aria-labelledby',
+            'title-' . $this->placestore['mapid'] . ' desc-' . $this->placestore['mapid']
+        );
         $this->svgmap->save_svg_data();
     }
 
@@ -303,6 +323,7 @@ class mapworker {
      * @return string
      */
     public function get_svgcode(): string {
+        $this->svgmap->replace_cdata();
         return $this->svgmap->get_svgcode();
     }
 

@@ -58,6 +58,10 @@ class mod_learningmap_mod_form extends moodleform_mod {
                 if ($CFG->branch >= 500 && !plugin_supports('mod', $module->modname, FEATURE_CAN_DISPLAY, true)) {
                     continue;
                 }
+                if (isset($this->_cm->id) && $this->_cm->id == $cmid) {
+                    // Do not include the learningmap itself.
+                    continue;
+                }
                 // Get only course modules which are not deleted.
                 if ($module->deletioninprogress == 0) {
                     $s['coursemodules'][] = [
@@ -89,12 +93,13 @@ class mod_learningmap_mod_form extends moodleform_mod {
         );
 
         $features = [];
-        foreach (LEARNINGMAP_FEATURES as $feature) {
+        foreach (array_merge(LEARNINGMAP_FEATURES, LEARNINGMAP_EXTRA_FEATURES) as $feature) {
             $features[] = [
                 'name' => $feature,
                 'title' => get_string($feature, 'learningmap'),
                 'text' => get_string($feature . '_help', 'learningmap'),
                 'alt' => get_string('help'),
+                'boolsetting' => in_array($feature, LEARNINGMAP_FEATURES),
             ];
         }
         $mform->addElement(

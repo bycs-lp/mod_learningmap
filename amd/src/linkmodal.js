@@ -18,7 +18,6 @@ import Ajax from 'core/ajax';
 import * as manualcompletion from 'core_course/manual_completion_toggle';
 import {renderLearningmap} from 'mod_learningmap/renderer';
 import CourseEvents from 'core_course/events';
-import $ from 'jquery';
 
 /**
  * Helper for opening course modules in a modal that do not have a view page.
@@ -43,28 +42,61 @@ export const init = async(learningmapcmid, inmodal = false) => {
                 event.preventDefault();
                 const cmid = target.getAttribute('data-cmid');
                 if (cmid) {
-                    const data = await Ajax.call([{
-                        methodname: 'mod_learningmap_get_cm',
-                        args: {
-                            cmid: cmid
-                        },
-                    }])[0];
-                    let js = $.parseHTML(data.js, null, true).map(node => node.innerHTML).join("\n");
-                    const modal = await Modal.create({
-                        title: data.name,
-                        body: data.completion + data.html,
-                        show: false,
-                        removeOnClose: true,
-                        large: true,
-                    });
-                    modal.bodyJS = js;
-                    modal.show();
-                    manualcompletion.init();
-                    document.addEventListener(CourseEvents.manualCompletionToggled, () => {
-                        renderLearningmap(learningmapcmid);
-                    });
+                    await openModal(event, learningmapcmid, inmodal);
                 }
             }
         });
+        container.addEventListener('keydown', async(event) => {
+            if (event.key === 'Enter') {
+                const target = event.target.closest('a[data-cmid]');
+                if (target && !target.hasAttribute('xlink:href')) {
+                    event.preventDefault();
+                    const cmid = target.getAttribute('data-cmid');
+                    if (cmid) {
+                        await openModal(event, learningmapcmid, inmodal);
+                    }
+                }
+            }
+        });
+    }
+};
+
+/**
+ * Opens a modal for a course module link that does not have a view page.
+ * @param {Event} event - The click or keydown event.
+ * @param {number} learningmapcmid - The course module ID of the learning map.
+ * @param {boolean} inmodal - Whether the learning map is already in a modal.
+ */
+export const openModal = async(event, learningmapcmid, inmodal) => {
+    const target = event.target.closest('a[data-cmid]');
+    if (target && !target.hasAttribute('xlink:href')) {
+        event.preventDefault();
+        const cmid = target.getAttribute('data-cmid');
+        if (cmid) {
+            const data = await Ajax.call([{
+                methodname: 'mod_learningmap_get_cm',
+                args: {
+                    cmid: cmid
+                },
+            }])[0];
+            const container = document.createElement('div');
+            container.innerHTML = data.js;
+            let js = Array.from(container.querySelectorAll('script'))
+                .map(s => s.textContent || '')
+                .join('\n');
+            const modal = await Modal.create({
+                title: data.name,
+                body: data.completion + data.html,
+                show: false,
+                removeOnClose: true,
+                large: true,
+            });
+            modal.bodyJS = js;
+            modal.show();
+            manualcompletion.init();
+            document.addEventListener(CourseEvents.manualCompletionToggled, () => {
+                renderLearningmap(learningmapcmid, inmodal);
+            });
+        }
     }
 };

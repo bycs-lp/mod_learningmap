@@ -43,6 +43,11 @@ define('LEARNINGMAP_FEATURES', [
 ]);
 
 /**
+ * Array with all features that do have non boolean values.
+ */
+define('LEARNINGMAP_EXTRA_FEATURES', ['description']);
+
+/**
  * Adds a new learningmap instance
  *
  * @param stdClass $data learningmap record
@@ -266,7 +271,7 @@ function learningmap_cm_info_view(cm_info $cm): void {
 
         $mapcontent = null;
 
-        if (helper::is_ajax_request()) {
+        if (helper::is_ajax_request() || \core_useragent::is_moodle_app()) {
             // If this is an ajax request to get the cm, we need to return only the map code.
             $mapcontent = learningmap_get_learningmap($cm);
         }
@@ -361,12 +366,11 @@ function learningmap_get_learningmap(cm_info $cm): string {
     $filtermanager = filter_manager::instance();
     $skipfilters = array_diff(array_keys(filter_get_active_in_context($cm->context)), $allowedfilters);
 
+    $code = $OUTPUT->render_from_template('mod_learningmap/mapcontainer', ['mapcode' => $worker->get_svgcode()]);
+
     return(
         $filtermanager->filter_text(
-            $OUTPUT->render_from_template(
-                'mod_learningmap/mapcontainer',
-                ['mapcode' => $worker->get_svgcode()]
-            ),
+            $code,
             $cm->context,
             ['trusted' => true, 'noclean' => true],
             $skipfilters

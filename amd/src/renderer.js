@@ -59,12 +59,14 @@ export const renderLearningmap = (cmId) => {
 
     promises[0].then(data => {
         let targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId);
+        let svgdoc = new DOMParser().parseFromString(data.content, 'image/svg+xml');
+        let svgnode = svgdoc.querySelector('svg');
         if (targetDiv) {
-            targetDiv.innerHTML = data.content;
+            targetDiv.replaceChildren(svgnode);
         }
         targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + '-modal');
         if (targetDiv) {
-            targetDiv.innerHTML = data.content;
+            targetDiv.replaceChildren(svgnode);
             targetDiv.parentElement.previousElementSibling.outerHTML = data.completion;
         }
         return true;
