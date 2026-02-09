@@ -271,8 +271,8 @@ function learningmap_cm_info_view(cm_info $cm): void {
 
         $mapcontent = null;
 
-        if (\core_useragent::is_moodle_app()) {
-            // If this is a request from the Moodle App, we deliver the map content directly.
+        if (helper::is_ajax_request() || \core_useragent::is_moodle_app()) {
+            // If this is an ajax request to get the cm, we need to return only the map code.
             $mapcontent = learningmap_get_learningmap($cm);
         }
 

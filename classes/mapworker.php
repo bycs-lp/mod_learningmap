@@ -323,6 +323,7 @@ class mapworker {
      * @return string
      */
     public function get_svgcode(): string {
+        $this->svgmap->replace_cdata();
         return $this->svgmap->get_svgcode();
     }
 

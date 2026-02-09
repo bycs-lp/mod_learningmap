@@ -60,7 +60,7 @@ export const renderLearningmap = (cmId) => {
     promises[0].then(data => {
         let targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId);
         let svgdoc = new DOMParser().parseFromString(data.content, 'image/svg+xml');
-            let svgnode = svgdoc.querySelector('svg');
+        let svgnode = svgdoc.querySelector('svg');
         if (targetDiv) {
             targetDiv.replaceChildren(svgnode);
         }

@@ -534,4 +534,20 @@ class svgmap {
             $element->setAttribute($attribute, $value);
         }
     }
+
+    /**
+     * Replaces all CDATA sections with properly escaped content
+     *
+     * @return void
+     */
+    public function replace_cdata(): void {
+        $this->svgcode = preg_replace_callback(
+            '/<!\[CDATA\[(.*?)\]\]>/s',
+            function ($matches) {
+                return htmlspecialchars($matches[1], ENT_XML1, 'UTF-8', false);
+            },
+            $this->svgcode
+        );
+        $this->load_dom();
+    }
 }
