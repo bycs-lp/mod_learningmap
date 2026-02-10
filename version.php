@@ -18,15 +18,15 @@
  * Version information for mod_learningmap
  *
  * @package     mod_learningmap
- * @copyright   2021-2025, ISB Bayern
+ * @copyright   2021-2026, ISB Bayern
  * @author      Stefan Hanauska <stefan.hanauska@csg-in.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_learningmap';
-$plugin->release = '0.9.14';
-$plugin->version = 2025111800;
+$plugin->release = '0.9.15';
+$plugin->version = 2026021000;
 $plugin->requires = 2022112800;
 $plugin->supported = [405, 501];
 $plugin->maturity = MATURITY_STABLE;
