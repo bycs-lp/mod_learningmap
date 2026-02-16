@@ -158,3 +158,8 @@
     width: 100%;
     box-sizing: border-box;
 }
+
+[dir="rtl"] #learningmap-activity-setting {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+}
