@@ -78,6 +78,7 @@ class mapworker {
         int $group = 0
     ) {
         global $USER;
+        $svgcode = preg_replace('/(<\!--\[CDATA\[)(.*?)(\]\]-->)/', '<![CDATA[$2]]>', $svgcode);
         $svgcode = preg_replace(
             '/<text([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/text>/',
             '<text$1><![CDATA[$3]]></text>',
