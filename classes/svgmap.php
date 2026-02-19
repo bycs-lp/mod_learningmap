@@ -218,12 +218,12 @@ class svgmap {
         // the link.
         $titlenode = $this->get_element_by_id('title' . $placeid);
         if ($titlenode) {
-            $titlenode->nodeValue = $text . $additionaltitle;
+            $titlenode->nodeValue = self::escape_content($text . $additionaltitle);
         }
         // Set the text element for the link.
         $textnode = $this->get_element_by_id('text' . $placeid);
         if ($textnode) {
-            $textnode->nodeValue = $text;
+            $textnode->nodeValue = self::escape_content($text);
         }
     }
 
@@ -245,9 +245,9 @@ class svgmap {
                 }
             }
             if ($titlenode) {
-                $titlenode->nodeValue = $text;
+                $titlenode->nodeValue = self::escape_content($text);
             } else {
-                $titlenode = $this->dom->createElementNS('http://www.w3.org/2000/svg', 'title', $text);
+                $titlenode = $this->dom->createElementNS('http://www.w3.org/2000/svg', 'title', self::escape_content($text));
                 $node->insertBefore($titlenode, $node->firstChild);
             }
         }
@@ -544,10 +544,20 @@ class svgmap {
         $this->svgcode = preg_replace_callback(
             '/<!\[CDATA\[(.*?)\]\]>/s',
             function ($matches) {
-                return htmlspecialchars($matches[1], ENT_XML1, 'UTF-8', false);
+                return self::escape_content($matches[1]);
             },
             $this->svgcode
         );
         $this->load_dom();
+    }
+
+    /**
+     * Escapes content for use in XML.
+     *
+     * @param string $content
+     * @return string
+     */
+    public static function escape_content(string $content): string {
+        return htmlspecialchars($content, ENT_QUOTES | ENT_XML1, 'UTF-8', false);
     }
 }
