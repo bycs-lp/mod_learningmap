@@ -23,14 +23,16 @@ namespace mod_learningmap;
  * @category   test
  * @copyright  2025 ISB Bayern
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \mod_learningmap\helper
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(helper::class)]
-#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'repair_learningmap_record')]
+#[\PHPUnit\Framework\Attributes\CoversClass(\mod_learningmap\helper::class)]
+#[\PHPUnit\Framework\Attributes\CoversMethod(\mod_learningmap\helper::class, 'repair_learningmap_record')]
 final class mod_learningmap_helper_test extends \advanced_testcase {
     /**
      * Tests the repair_learningmap_record method.
      *
      * @return void
+     * @covers \mod_learningmap\helper::repair_learningmap_record
      */
     public function test_repair_learningmap_record(): void {
         global $DB;

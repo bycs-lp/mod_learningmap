@@ -50,7 +50,12 @@
         "slicemode": false
     }
 }}
-<style id="learningmap-svgstyle" type="text/css">
+<style id="learningmap-svgstyle-{{mapid}}" type="text/css">
+
+#learningmap-svgmap-{{mapid}} {
+    user-select: none;
+    link-decoration: none;
+}
 
 #learningmap-svgmap-{{mapid}} .learningmap-place {
     fill: {{ placecolor }};
@@ -102,7 +107,7 @@
     {{/hidepaths}}
 }
 
-#learningmap-svgmap-{{mapid}} text {
+#learningmap-svgmap-{{mapid}} .learningmap-text-group {
     fill: {{ textcolor }};
     stroke: none;
     font-family: FreeSans;
