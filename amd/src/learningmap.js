@@ -17,7 +17,7 @@
  * Main module for the learningmap editor
  *
  * @module     mod_learningmap/learningmap
- * @copyright  2025 ISB Bayern
+ * @copyright  2021-2026 ISB Bayern
  * @author     Stefan Hanauska <stefan.hanauska@csg-in.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +25,7 @@ import {exception as displayException, saveCancel} from 'core/notification';
 import Templates from 'core/templates';
 import placestore from 'mod_learningmap/placestore';
 import * as Str from 'core/str';
+import {debounce} from 'core/utils';
 
 const circleRadius = 10;
 
@@ -108,13 +109,13 @@ export const init = async() => {
             if (activitySelector.value) {
                 let text = document.getElementById('text' + elementForActivitySelector);
                 if (text) {
-                    text.replaceChildren(svgdoc.createCDATASection(
+                    text.replaceChildren(svgdoc.createTextNode(
                         activitySelector.querySelector('option[value="' + activitySelector.value + '"]').textContent
                     ));
                 }
                 let title = document.getElementById('title' + elementForActivitySelector);
                 if (title) {
-                    title.replaceChildren(svgdoc.createCDATASection(
+                    title.replaceChildren(svgdoc.createTextNode(
                         activitySelector.querySelector('option[value="' + activitySelector.value + '"]').textContent
                     ));
                 }
@@ -306,11 +307,11 @@ export const init = async() => {
         dragel = el;
         if (el) {
             el.addEventListener('mousedown', startDrag);
-            el.addEventListener('mousemove', drag);
+            el.addEventListener('mousemove', debounce(drag, 5));
             el.addEventListener('mouseup', endDrag);
             el.addEventListener('mouseleave', endDrag);
             el.addEventListener('touchstart', startTouch);
-            el.addEventListener('touchmove', drag);
+            el.addEventListener('touchmove', debounce(drag, 5));
             el.addEventListener('touchend', endTouch);
             el.addEventListener('touchleave', endTouch);
             el.addEventListener('touchcancel', endTouch);
@@ -336,7 +337,7 @@ export const init = async() => {
                 pathsToUpdateSecondPoint = placestore.getPathsWithSid(selectedElement.id);
             } else if (evt.target.nodeName == 'text') {
                 selectedElement = evt.target;
-                let place = selectedElement.parentNode.querySelector('.learningmap-place');
+                let place = findPlaceForText(selectedElement.id);
                 offset = getMousePosition(evt);
                 offset.x -= parseInt(selectedElement.getAttributeNS(null, "dx")) + place.cx.baseVal.value;
                 offset.y -= parseInt(selectedElement.getAttributeNS(null, "dy")) + place.cy.baseVal.value;
@@ -365,7 +366,7 @@ export const init = async() => {
                 let cx = coord.x - offset.x;
                 let cy = coord.y - offset.y;
                 if (selectedElement.nodeName == 'text') {
-                    let place = selectedElement.parentNode.querySelector('.learningmap-place');
+                    let place = findPlaceForText(selectedElement.id);
                     // Calculate the delta from the current mouse position to the corresponding place.
                     // coord: current mouse position
                     // offset: delta from the mouse position to the coordinates of the text node
@@ -641,7 +642,7 @@ export const init = async() => {
         // Default value for delta: Circle radius * 1.5 (as a padding)
         text.setAttribute('dx', circleRadius * 1.5);
         text.setAttribute('dy', circleRadius * 1.5);
-        let textcontent = svgdoc.createCDATASection(content);
+        let textcontent = svgdoc.createTextNode(content);
         text.replaceChildren(textcontent);
         return text;
     }
@@ -689,10 +690,9 @@ export const init = async() => {
      * @param {*} child child item to set the link on
      * @param {*} id id of the link
      * @param {*} title title of the link
-     * @param {*} text text to describe the link
      * @returns {any}
      */
-    function link(child, id, title = null, text = null) {
+    function link(child, id, title = null) {
         let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
         link.setAttribute('id', id);
         link.setAttribute('xlink:href', '');
@@ -700,9 +700,6 @@ export const init = async() => {
         link.appendChild(child);
         if (title !== null) {
             link.appendChild(title);
-        }
-        if (text !== null) {
-            link.appendChild(text);
         }
         return link;
     }
@@ -718,7 +715,7 @@ export const init = async() => {
             titlenode = document.createElementNS('http://www.w3.org/2000/svg', 'title');
             svgnode.appendChild(titlenode);
         }
-        let titlecontent = svgdoc.createCDATASection(values.title);
+        let titlecontent = svgdoc.createTextNode(values.title);
         titlenode.replaceChildren(titlecontent);
         titlenode.setAttribute('id', 'title-' + placestore.getMapid());
 
@@ -727,7 +724,7 @@ export const init = async() => {
             descnode = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
             svgnode.appendChild(descnode);
         }
-        let desccontent = svgdoc.createCDATASection(values.description);
+        let desccontent = svgdoc.createTextNode(values.description);
         descnode.replaceChildren(desccontent);
         descnode.setAttribute('id', 'desc-' + placestore.getMapid());
     }
@@ -760,6 +757,10 @@ export const init = async() => {
      */
     function addPlace(event) {
         let placesgroup = document.getElementById('placesGroup');
+        if (!placesgroup) {
+            placesgroup = document.getElementById('placesGroup-' + placestore.getMapid());
+        }
+        const textgroup = document.getElementById('textsGroup-' + placestore.getMapid());
         let placeId = 'p' + placestore.getId();
         let linkId = 'a' + placestore.getId();
         var CTM = event.target.getScreenCTM();
@@ -772,9 +773,11 @@ export const init = async() => {
             link(
                 circle(cx, cy, circleRadius, 'learningmap-place learningmap-draggable learningmap-emptyplace', placeId),
                 linkId,
-                title('title' + placeId),
-                text('text' + placeId, '', cx, cy)
+                title('title' + placeId)
             )
+        );
+        textgroup.appendChild(
+            text('text' + placeId, '', cx, cy)
         );
         placestore.addPlace(placeId, linkId);
     }
@@ -840,6 +843,9 @@ export const init = async() => {
         let pid = 'p' + fid + '_' + sid;
         if (document.getElementById(pid) === null) {
             let pathsgroup = document.getElementById('pathsGroup');
+            if (!pathsgroup) {
+                pathsgroup = document.getElementById('pathsGroup-' + placestore.getMapid());
+            }
             let first = document.getElementById('p' + fid);
             let second = document.getElementById('p' + sid);
             if (pathsgroup && first && second) {
@@ -871,7 +877,10 @@ export const init = async() => {
         placestore.removePlace(event.target.id);
         parent.removeChild(place);
         parent.parentNode.removeChild(parent);
-
+        let textNode = document.getElementById('text' + event.target.id);
+        if (textNode) {
+            textNode.parentNode.removeChild(textNode);
+        }
         updateCode();
     }
 
@@ -906,6 +915,9 @@ export const init = async() => {
         let previewimage = document.getElementsByClassName('realpreview');
         if (previewimage.length > 0) {
             let background = document.getElementById('learningmap-background-image');
+            if (!background) {
+                background = document.getElementById('learningmap-background-image-' + placestore.getMapid());
+            }
             let backgroundurl = previewimage[0].getAttribute('src').split('?')[0];
             // If the uploaded file reuses the filename of a previously uploaded image, they differ
             // only in the oid. So one has to append the oid to the url.
@@ -922,6 +934,9 @@ export const init = async() => {
      */
     function registerBackgroundListener() {
         let background = document.getElementById('learningmap-background-image');
+        if (!background) {
+            background = document.getElementById('learningmap-background-image-' + placestore.getMapid());
+        }
         if (background) {
             background.addEventListener('load', function() {
                 background.removeAttribute('height');
@@ -1069,8 +1084,9 @@ export const init = async() => {
                     }
                 }
                 let placeNode = document.getElementById(place.id);
+                let textGroup = document.getElementById('textsGroup-' + placestore.getMapid());
                 let textNode = text('text' + place.id, content, placeNode.cx.baseVal.value, placeNode.cy.baseVal.value);
-                placeNode.parentNode.appendChild(textNode);
+                textGroup.appendChild(textNode);
             }
         }
     }
@@ -1081,5 +1097,15 @@ export const init = async() => {
     function hideAdvancedSettings() {
         let advancedSettings = document.getElementById('learningmap-advanced-settings');
         advancedSettings.setAttribute('hidden', '');
+    }
+
+    /**
+     * Returns the place that belongs to the given text id.
+     * @param {*} textId
+     * @returns {*} The place element
+     */
+    function findPlaceForText(textId) {
+        let placename = textId.replace('text', '');
+        return svgnode.getElementById(placename);
     }
 };

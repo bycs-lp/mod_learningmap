@@ -63,14 +63,46 @@ class svgmap {
      */
     public function __construct(string $svgcode, array $placestore) {
         $this->svgcode = $svgcode;
+        // Fix some common problems with SVG code that can cause issues with DOMDocument.
+        $this->svgcode = preg_replace_callback('/(<\!--\[CDATA\[)(.*?)(\]\]-->)/', function ($matches) {
+            return self::escape_content($matches[2]);
+        }, $this->svgcode);
+        $this->svgcode = preg_replace_callback(
+            '/<text([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/text>/',
+            function ($matches) {
+                return '<text' . $matches[1] . '>' . self::escape_content($matches[3]) . '</text>';
+            },
+            $this->svgcode
+        );
+        $this->svgcode = preg_replace_callback(
+            '/<title([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/title>/',
+            function ($matches) {
+                return '<title' . $matches[1] . '>' . self::escape_content($matches[3]) . '</title>';
+            },
+            $this->svgcode
+        );
+        $this->svgcode = preg_replace_callback(
+            '/<desc([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/desc>/',
+            function ($matches) {
+                return '<desc' . $matches[1] . '>' . self::escape_content($matches[3]) . '</desc>';
+            },
+            $this->svgcode
+        );
+        $this->svgcode = preg_replace_callback(
+            '/<!\[CDATA\[(.*?)\]\]>/s',
+            function ($matches) {
+                return self::escape_content($matches[1]);
+            },
+            $this->svgcode
+        );
         $this->placestore = $placestore;
 
         $this->dom = new \DOMDocument('1.0', 'UTF-8');
         $this->dom->preserveWhiteSpace = false;
         $this->dom->formatOutput = true;
+        $this->dom->recover = true;
 
         $this->load_dom();
-        $this->xpath = new \DOMXPath($this->dom);
     }
 
     /**
@@ -81,6 +113,7 @@ class svgmap {
     public function load_dom(): void {
         $this->remove_tags_before_svg();
         $this->dom->loadXML($this->svgcode);
+        $this->xpath = new \DOMXPath($this->dom);
     }
 
     /**
@@ -102,14 +135,14 @@ class svgmap {
 
     /**
      * Replaces the svg defs (e.g.) filters or patterns that are defined for use in the document without being directly visible.
-     *
+     * @param array $context Context data for the template
      * @return void
      */
-    public function replace_defs(): void {
+    public function replace_defs(array $context = []): void {
         global $OUTPUT;
         $this->svgcode = preg_replace(
             '/<defs[\s\S]*defs>/i',
-            $OUTPUT->render_from_template('mod_learningmap/svgdefs', []),
+            $OUTPUT->render_from_template('mod_learningmap/svgdefs', $context),
             $this->svgcode
         );
         $this->load_dom();
@@ -173,6 +206,11 @@ class svgmap {
                 }
                 // Make sure that also the link node is removed.
                 $placeorpath = $placeorpath->parentNode;
+                // Remove text.
+                $text = $this->get_element_by_id('text' . $id);
+                if ($text) {
+                    $text->parentNode->removeChild($text);
+                }
             }
             $placeorpath->parentNode->removeChild($placeorpath);
         }
@@ -333,7 +371,13 @@ class svgmap {
         global $CFG;
         $coordinates = [];
         $pathsgroup = $this->get_element_by_id('pathsGroup');
+        if (!$pathsgroup) {
+            $pathsgroup = $this->get_element_by_id('pathsGroup-' . $this->placestore['mapid']);
+        }
         $placesgroup = $this->get_element_by_id('placesGroup');
+        if (!$placesgroup) {
+            $placesgroup = $this->get_element_by_id('placesGroup-' . $this->placestore['mapid']);
+        }
         if (empty($this->placestore['hidepaths'])) {
             // Only processing quadratic bezier curves here as other paths are already handled
             // via the coordinates of the corresponding places.
@@ -388,6 +432,9 @@ class svgmap {
         $coordinates = $this->get_coordinates();
         if (count($coordinates) > 0) {
             $backgroundnode = $this->get_element_by_id('learningmap-background-image');
+            if (!$backgroundnode) {
+                $backgroundnode = $this->get_element_by_id('learningmap-background-image-' . $this->placestore['mapid']);
+            }
             $height = $backgroundnode->getAttribute('height');
             $c = array_pop($coordinates);
             $minx = $c['x'];
@@ -416,7 +463,9 @@ class svgmap {
             $maxy = min($height, $maxy + $padding);
 
             $placesgroup = $this->get_element_by_id('placesGroup');
-
+            if (!$placesgroup) {
+                $placesgroup = $this->get_element_by_id('placesGroup-' . $this->placestore['mapid']);
+            }
             // Create the overlay for slicemode.
             $overlay = $this->dom->createElement('path');
             $overlaydescription = "M 0 0 L 0 $height L 800 $height L 800 0 Z ";
@@ -536,22 +585,6 @@ class svgmap {
     }
 
     /**
-     * Replaces all CDATA sections with properly escaped content
-     *
-     * @return void
-     */
-    public function replace_cdata(): void {
-        $this->svgcode = preg_replace_callback(
-            '/<!\[CDATA\[(.*?)\]\]>/s',
-            function ($matches) {
-                return self::escape_content($matches[1]);
-            },
-            $this->svgcode
-        );
-        $this->load_dom();
-    }
-
-    /**
      * Escapes content for use in XML.
      *
      * @param string $content
@@ -559,5 +592,48 @@ class svgmap {
      */
     public static function escape_content(string $content): string {
         return htmlspecialchars($content, ENT_QUOTES | ENT_XML1, 'UTF-8', false);
+    }
+
+    /**
+     * Helper function for upgrade. Renames groups to have individual ids and moves text elements to a separate group.
+     *
+     * @return void
+     */
+    public function fix_svg(): void {
+        $svgmap = $this->get_element_by_id('learningmap-svgmap-' . $this->placestore['mapid']);
+        if (!$svgmap) {
+            $svgmap = $this->dom->getElementsByTagName('svg')->item(0);
+            $svgmap->setAttribute('id', 'learningmap-svgmap-' . $this->placestore['mapid']);
+        }
+        $placesgroup = $this->get_element_by_id('placesGroup');
+        if ($placesgroup) {
+            $placesgroup->setAttribute('id', 'placesGroup-' . $this->placestore['mapid']);
+            $placesgroup->setAttribute('class', 'learningmap-places-group');
+        }
+        $pathsgroup = $this->get_element_by_id('pathsGroup');
+        if ($pathsgroup) {
+            $pathsgroup->setAttribute('mask', 'url(#placemask-' . $this->placestore['mapid'] . ')');
+            $pathsgroup->setAttribute('id', 'pathsGroup-' . $this->placestore['mapid']);
+            $pathsgroup->setAttribute('class', 'learningmap-paths-group');
+        }
+        $backgroundgroup = $this->get_element_by_id('backgroundGroup');
+        if ($backgroundgroup) {
+            $backgroundgroup->setAttribute('id', 'backgroundGroup-' . $this->placestore['mapid']);
+            $backgroundgroup->setAttribute('class', 'learningmap-background-group');
+        }
+        $textgroup = $this->get_element_by_id('textGroup-' . $this->placestore['mapid']);
+        if (!$textgroup) {
+            $textgroup = $this->dom->createElement('g');
+            $textgroup->setAttribute('id', 'textGroup-' . $this->placestore['mapid']);
+            $textgroup->setAttribute('class', 'learningmap-text-group');
+            $svgmap->appendChild($textgroup);
+        }
+        $textelements = $this->dom->getElementsByTagName('text');
+        foreach ($textelements as $textelement) {
+            if (str_starts_with($textelement->getAttribute('id'), 'textp')) {
+                $textgroup->appendChild($textelement);
+            }
+        }
+        $this->save_svg_data();
     }
 }
