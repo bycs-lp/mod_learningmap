@@ -35,7 +35,8 @@ class restore_learningmap_activity_structure_step extends restore_activity_struc
     }
 
     /**
-     * Restore a learningmap record.
+     * Restore a learningmap record. This will not change placestore and
+     * svgcode as they will be processed in the after_restore method.
      * @param array|object $data
      * @throws base_step_exception
      * @throws dml_exception

@@ -45,28 +45,23 @@ class mod_learningmap_mod_form extends moodleform_mod {
 
         $s = [];
         $activitysel = [];
-        // Gets only sections with content.
-        foreach ($cm->get_sections() as $sectionnum => $section) {
-            $sectioninfo = $cm->get_section_info($sectionnum);
-            $s['name'] = $sectioninfo->name;
-            if (empty($s['name'])) {
-                $s['name'] = get_string('section') . ' ' . $sectionnum;
-            }
+        $format = course_get_format($this->_course);
+        foreach ($cm->get_section_info_all() as $sectionnum => $sectioninfo) {
+            $s['name'] = $format->get_section_name($sectionnum);
             $s['coursemodules'] = [];
-            foreach ($section as $cmid) {
-                $module = $cm->get_cm($cmid);
+            foreach ($sectioninfo->get_sequence_cm_infos() as $module) {
                 if ($CFG->branch >= 500 && !plugin_supports('mod', $module->modname, FEATURE_CAN_DISPLAY, true)) {
                     continue;
                 }
-                if (isset($this->_cm->id) && $this->_cm->id == $cmid) {
+                if (isset($this->_cm->id) && $this->_cm->id == $module->id) {
                     // Do not include the learningmap itself.
                     continue;
                 }
                 // Get only course modules which are not deleted.
                 if ($module->deletioninprogress == 0) {
                     $s['coursemodules'][] = [
-                        'id' => $cmid,
-                        'name' => s($module->name),
+                        'id' => $module->id,
+                        'name' => $module->get_formatted_name(),
                         'completionenabled' => $module->completion > 0,
                         'hidden' => $module->visible == 0,
                     ];
@@ -291,6 +286,8 @@ class mod_learningmap_mod_form extends moodleform_mod {
             );
             $mapworker->process_map_objects();
             $mapworker->replace_stylesheet();
+            $mapworker->replace_defs();
+            $mapworker->fix_svg();
             $defaultvalues['svgcode'] = $mapworker->get_svgcode();
 
             $draftitemid = file_get_submitted_draft_itemid('backgroundfile');
