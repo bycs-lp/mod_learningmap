@@ -29,7 +29,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @covers     \mod_learningmap\svgmap
  */
 #[CoversClass(\mod_learningmap\svgmap::class)]
-final class mod_learningmap_svgmap_test extends \advanced_testcase {
+final class svgmap_test extends \advanced_testcase {
     /**
      * Test constructor (especially handling CDATA removal).
      *

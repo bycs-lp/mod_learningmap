@@ -27,7 +27,7 @@ namespace mod_learningmap;
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\mod_learningmap\helper::class)]
 #[\PHPUnit\Framework\Attributes\CoversMethod(\mod_learningmap\helper::class, 'repair_learningmap_record')]
-final class mod_learningmap_helper_test extends \advanced_testcase {
+final class helper_test extends \advanced_testcase {
     /**
      * Tests the repair_learningmap_record method.
      *
