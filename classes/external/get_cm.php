@@ -86,8 +86,8 @@ class get_cm extends external_api {
             'modname' => $cm->modname,
         ];
 
-        // Remove description for labels, because it is already in html.
-        if ($cm->modname === 'label') {
+        // Remove description for labels / unilabels, because it is already in html.
+        if ($cm->modname === 'label' || $cm->modname === 'unilabel') {
             $PAGE->activityheader->set_description('');
         }
 
