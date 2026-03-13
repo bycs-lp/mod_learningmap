@@ -78,22 +78,6 @@ class mapworker {
         int $group = 0
     ) {
         global $USER;
-        $svgcode = preg_replace('/(<\!--\[CDATA\[)(.*?)(\]\]-->)/', '<![CDATA[$2]]>', $svgcode);
-        $svgcode = preg_replace(
-            '/<text([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/text>/',
-            '<text$1><![CDATA[$3]]></text>',
-            $svgcode
-        );
-        $svgcode = preg_replace(
-            '/<title([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/title>/',
-            '<title$1><![CDATA[$3]]></title>',
-            $svgcode
-        );
-        $svgcode = preg_replace(
-            '/<desc([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/desc>/',
-            '<desc$1><![CDATA[$3]]></desc>',
-            $svgcode
-        );
         $this->edit = $edit;
         $placestore['editmode'] = $this->edit;
         $this->placestore = $placestore;
@@ -122,7 +106,7 @@ class mapworker {
      * @return void
      */
     public function replace_defs(): void {
-        $this->svgmap->replace_defs();
+        $this->svgmap->replace_defs(['mapid' => $this->placestore['mapid']]);
     }
 
     /**
@@ -324,7 +308,6 @@ class mapworker {
      * @return string
      */
     public function get_svgcode(): string {
-        $this->svgmap->replace_cdata();
         return $this->svgmap->get_svgcode();
     }
 
@@ -345,5 +328,15 @@ class mapworker {
      */
     public function get_active(): array {
         return $this->active;
+    }
+
+    /**
+     * Helper function for upgrade. Fixes the SVG code of existing maps to ensure that the groups for paths,
+     * places and background are present and have the correct attributes.
+     *
+     * @return void
+     */
+    public function fix_svg(): void {
+        $this->svgmap->fix_svg();
     }
 }

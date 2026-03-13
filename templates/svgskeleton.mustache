@@ -56,11 +56,13 @@
 <desc id="desc-{{mapid}}"></desc>
 {{> mod_learningmap/svgdefs }}
 {{> mod_learningmap/cssskeleton }}
-<g id="backgroundGroup">
-    <image x="0" y="0" width="800" height="600" class="learningmap-background-image" id="learningmap-background-image" xlink:href=""></image>
+<g id="backgroundGroup-{{mapid}}" class="learningmap-background-group">
+    <image x="0" y="0" width="800" height="600" class="learningmap-background-image" id="learningmap-background-image-{{mapid}}" xlink:href=""></image>
 </g>
-<g id="pathsGroup">
+<g id="pathsGroup-{{mapid}}" class="learningmap-paths-group" mask="url(#placemask-{{mapid}})">
 </g>
-<g id="placesGroup">
+<g id="placesGroup-{{mapid}}" class="learningmap-places-group">
+</g>
+<g id="textGroup-{{mapid}}" class="learningmap-text-group">
 </g>
 </svg>
