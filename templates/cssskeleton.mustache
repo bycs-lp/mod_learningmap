@@ -52,6 +52,20 @@
 }}
 <style id="learningmap-svgstyle" type="text/css">
 
+#learningmap-svgmap-{{mapid}} a:focus-visible {
+    outline: 4px solid blue;
+    outline-offset: 2px;
+}
+
+#learningmap-svgmap-{{mapid}} a:focus-visible circle {     
+    filter: brightness(1.5);
+    r: 12px;
+}
+
+#learningmap-svgmap-{{mapid}} a:focus-visible .learningmap-place {
+    animation: none;
+}
+
 #learningmap-svgmap-{{mapid}} .learningmap-place {
     fill: {{ placecolor }};
     stroke-width: 3px;
