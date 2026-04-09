@@ -75,21 +75,21 @@ class svgmap {
             $this->svgcode
         );
         $this->svgcode = preg_replace_callback(
-            '/<text([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/text>/s',
+            '/<text([^>]*[^\/])>(?!(<\!\[CDATA\[))(.*?)<\/text>/s',
             function ($matches) {
                 return '<text' . $matches[1] . '>' . self::escape_content($matches[3]) . '</text>';
             },
             $this->svgcode
         );
         $this->svgcode = preg_replace_callback(
-            '/<title([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/title>/s',
+            '/<title([^>]*[^\/])>(?!(<\!\[CDATA\[))(.*?)<\/title>/s',
             function ($matches) {
                 return '<title' . $matches[1] . '>' . self::escape_content($matches[3]) . '</title>';
             },
             $this->svgcode
         );
         $this->svgcode = preg_replace_callback(
-            '/<desc([^>]*)>(?!(<\!\[CDATA\[))(.*?)<\/desc>/s',
+            '/<desc([^>]*[^\/])>(?!(<\!\[CDATA\[))(.*?)<\/desc>/s',
             function ($matches) {
                 return '<desc' . $matches[1] . '>' . self::escape_content($matches[3]) . '</desc>';
             },
@@ -583,6 +583,36 @@ class svgmap {
         if ($element) {
             $element->setAttribute($attribute, $value);
         }
+    }
+
+    /**
+     * Removes an attribute of an element.
+     *
+     * @param string $id The id of the DOM element
+     * @param string $attribute The name of the attribute
+     * @return void
+     */
+    public function remove_attribute(string $id, string $attribute): void {
+        $element = $this->get_element_by_id($id);
+        if ($element) {
+            $element->removeAttribute($attribute);
+        }
+    }
+
+    /**
+     * Replaces all CDATA sections with properly escaped content
+     *
+     * @return void
+     */
+    public function replace_cdata(): void {
+        $this->svgcode = preg_replace_callback(
+            '/<!\[CDATA\[(.*?)\]\]>/s',
+            function ($matches) {
+                return self::escape_content($matches[1]);
+            },
+            $this->svgcode
+        );
+        $this->load_dom();
     }
 
     /**

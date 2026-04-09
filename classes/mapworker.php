@@ -249,6 +249,7 @@ class mapworker {
                 } else {
                     $this->svgmap->set_hidden($links[$place]);
                     $this->svgmap->remove_link($links[$place]);
+                    $this->svgmap->remove_attribute($links[$place], 'data-cmid');
                 }
             }
             // Remove all places that are impossible to reach.
