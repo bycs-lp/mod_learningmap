@@ -536,6 +536,20 @@ class svgmap {
     }
 
     /**
+     * Removes an attribute of an element.
+     *
+     * @param string $id The id of the DOM element
+     * @param string $attribute The name of the attribute
+     * @return void
+     */
+    public function remove_attribute(string $id, string $attribute): void {
+        $element = $this->get_element_by_id($id);
+        if ($element) {
+            $element->removeAttribute($attribute);
+        }
+    }
+
+    /**
      * Replaces all CDATA sections with properly escaped content
      *
      * @return void
