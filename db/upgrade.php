@@ -111,5 +111,25 @@ function xmldb_learningmap_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2025092200, 'learningmap');
     }
 
+    if ($oldversion < 2026022200) {
+        $entries = $DB->get_records('learningmap', []);
+        if ($entries) {
+            foreach ($entries as $entry) {
+                $placestore = json_decode($entry->placestore, true);
+                $placestore['version'] = 2026022200;
+                $mapworker = new \mod_learningmap\mapworker($entry->svgcode, $placestore);
+                $mapworker->replace_stylesheet();
+                $mapworker->replace_defs();
+                $mapworker->fix_svg();
+                $entry->svgcode = $mapworker->get_svgcode();
+                $entry->placestore = json_encode($placestore);
+                $DB->update_record('learningmap', $entry);
+            }
+        }
+
+        // Learningmap savepoint reached.
+        upgrade_mod_savepoint(true, 2026022200, 'learningmap');
+    }
+
     return true;
 }
