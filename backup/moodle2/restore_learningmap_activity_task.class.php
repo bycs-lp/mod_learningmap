@@ -104,8 +104,8 @@ class restore_learningmap_activity_task extends restore_activity_task {
         $newmapid = uniqid();
         $placestore->mapid = $newmapid;
 
-        if (!isset($placestore->version) || $placestore->version < 2024072201) {
-            $placestore->version = 2024072201;
+        if (!isset($placestore->version) || $placestore->version < 2026022200) {
+            $placestore->version = 2026022200;
             // Needs 1 as default value (otherwise all place strokes would be hidden).
             if (!isset($placestore->strokeopacity)) {
                 $placestore->strokeopacity = 1;
@@ -121,9 +121,11 @@ class restore_learningmap_activity_task extends restore_activity_task {
             $mapworker = new \mod_learningmap\mapworker($mapcode, (array)$placestore);
             $mapworker->replace_stylesheet();
             $mapworker->replace_defs();
+            $mapworker->fix_svg();
             $item->svgcode = $mapworker->get_svgcode();
         }
-        $item->svgcode = str_replace('learningmap-svgmap-' . $oldmapid, 'learningmap-svgmap-' . $newmapid, $item->svgcode);
+        // Map ids are used in the svg code as well, so we need to replace them there too.
+        $item->svgcode = str_replace('-' . $oldmapid, '-' . $newmapid, $item->svgcode);
         $item->placestore = json_encode($placestore);
         $item->course = $courseid;
         $DB->update_record('learningmap', $item);
