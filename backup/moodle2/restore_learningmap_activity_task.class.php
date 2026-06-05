@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 use mod_learningmap\migrationhelper;
+use mod_learningmap\cachemanager;
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
@@ -24,7 +25,7 @@ require_once($CFG->dirroot . '/mod/learningmap/backup/moodle2/restore_learningma
  * Restore class for mod_learningmap
  *
  * @package     mod_learningmap
- * @copyright 2021-2024, ISB Bayern
+ * @copyright   2021-2026, ISB Bayern
  * @author      Stefan Hanauska <stefan.hanauska@csg-in.de>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -127,5 +128,9 @@ class restore_learningmap_activity_task extends restore_activity_task {
         $item->placestore = json_encode($placestore);
         $item->course = $courseid;
         $DB->update_record('learningmap', $item);
+
+        // Reset backlink cache for the course as there might be activities included
+        // in this learning map that need to show a new link.
+        cachemanager::reset_backlink_cache($courseid);
     }
 }
