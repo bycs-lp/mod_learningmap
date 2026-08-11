@@ -20,7 +20,7 @@ use core_external\external_api;
 use core_external\external_value;
 use core_external\external_single_structure;
 use core_external\external_function_parameters;
-use core_courseformat\output\local\content\cm\completion;
+use mod_learningmap\helper;
 /**
  * Class get_cm
  *
@@ -91,10 +91,8 @@ class get_cm extends external_api {
             $PAGE->activityheader->set_description('');
         }
 
-        $data['completion'] = $OUTPUT->render_from_template(
-            'core/activity_header',
-            $PAGE->activityheader->export_for_template($OUTPUT)
-        );
+        $activityheaderdata = $PAGE->activityheader->export_for_template($OUTPUT);
+        $data['completion'] = helper::render_activity_header_for_modal($activityheaderdata);
 
         $data['name'] = format_string($cm->name, true, ['context' => $context]);
 

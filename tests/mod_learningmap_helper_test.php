@@ -26,6 +26,7 @@ namespace mod_learningmap;
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(helper::class)]
 #[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'repair_learningmap_record')]
+#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'render_activity_header_for_modal')]
 final class mod_learningmap_helper_test extends \advanced_testcase {
     /**
      * Tests the repair_learningmap_record method.
@@ -61,5 +62,43 @@ final class mod_learningmap_helper_test extends \advanced_testcase {
             $recordafter->course,
             'The learning map record should not have changed after trying to repair it with a non-existing course.'
         );
+    }
+
+    /**
+     * Tests that the manual completion button is present in rendered modal header HTML.
+     *
+     * There have been changes to the placement of the completion information/manual completion button
+     * across < Mooodle 5.2, Moodle 5.2 and Moodle > 5.2, so this test should make sure there's always
+     * a completion button for all supported moodle versions.
+     */
+    public function test_render_activity_header_for_modal_manual_completion_button_presence(): void {
+        global $PAGE, $OUTPUT;
+
+        $this->resetAfterTest();
+        set_config('enablecompletion', 1);
+
+        $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        $this->setUser($user);
+
+        $label = $this->getDataGenerator()->create_module('label', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_MANUAL,
+        ]);
+
+        $modinfo = get_fast_modinfo($course);
+        $cminfo = $modinfo->get_cm($label->cmid);
+        $context = \context_module::instance($cminfo->id);
+
+        $PAGE->set_url(new \moodle_url('/mod/label/view.php', ['id' => $cminfo->id]));
+        $PAGE->set_context($context);
+        $PAGE->set_cm($cminfo, $course);
+        $PAGE->set_pagelayout('embedded');
+
+        $activityheaderdata = $PAGE->activityheader->export_for_template($OUTPUT);
+        $html = helper::render_activity_header_for_modal($activityheaderdata);
+
+        $this->assertStringContainsString('data-action="toggle-manual-completion"', $html);
     }
 }

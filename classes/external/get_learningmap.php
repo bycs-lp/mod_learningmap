@@ -37,6 +37,7 @@ use external_single_structure;
 use external_value;
 use invalid_parameter_exception;
 use moodle_exception;
+use mod_learningmap\helper;
 use required_capability_exception;
 use restricted_context_exception;
 
@@ -104,10 +105,8 @@ class get_learningmap extends external_api {
         $PAGE->set_cm($cminfo);
         $PAGE->set_pagelayout('embedded');
 
-        $completion = $OUTPUT->render_from_template(
-            'core/activity_header',
-            $PAGE->activityheader->export_for_template($OUTPUT)
-        );
+        $activityheaderdata = $PAGE->activityheader->export_for_template($OUTPUT);
+        $completion = helper::render_activity_header_for_modal($activityheaderdata);
 
         return [
             'content' => learningmap_get_learningmap($cminfo),
