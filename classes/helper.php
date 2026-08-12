@@ -25,6 +25,28 @@ namespace mod_learningmap;
  */
 class helper {
     /**
+     * Get the current default activity header description without rendering the full header.
+     *
+     * Calling activity_header::export_for_template() here would add completion actions as a side effect.
+     *
+     * @return string
+     */
+    public static function get_activity_header_description(): string {
+        global $PAGE;
+
+        $layoutoptions = $PAGE->layout_options['activityheader'] ?? [];
+        if (
+            empty($layoutoptions['nodescription'])
+            && !empty($PAGE->activityrecord->intro)
+            && trim($PAGE->activityrecord->intro)
+        ) {
+            return format_module_intro($PAGE->activityname, $PAGE->activityrecord, $PAGE->cm->id);
+        }
+
+        return '';
+    }
+
+    /**
      * Render the activity header for learningmap modals.
      *
      * Since Moodle 5.2 the manual completion UI is rendered via the activity header.
