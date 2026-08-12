@@ -8,24 +8,23 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: ${{ matrix.database == 'pgsql' && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
       mariadb:
-        image: mariadb:10
+        image: ${{ matrix.database == 'mariadb' && 'mariadb:11' || '' }}
         env:
-          MYSQL_USER: 'root'
-          MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
           MYSQL_CHARACTER_SET_SERVER: "utf8mb4"
           MYSQL_COLLATION_SERVER: "utf8mb4_unicode_ci"
-
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 3
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval 10s --health-timeout 5s --health-retries 3
 
     strategy:
       fail-fast: false
@@ -36,6 +35,12 @@ jobs:
             database: 'mariadb'
           - php: '8.4'
             moodle-branch: 'main'
+            database: 'pgsql'
+          - php: '8.4'
+            moodle-branch: 'MOODLE_502_STABLE'
+            database: 'mariadb'
+          - php: '8.4'
+            moodle-branch: 'MOODLE_502_STABLE'
             database: 'pgsql'
           - php: '8.4'
             moodle-branch: 'MOODLE_501_STABLE'

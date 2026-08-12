@@ -25,6 +25,79 @@ namespace mod_learningmap;
  */
 class helper {
     /**
+     * Get the current default activity header description without rendering the full header.
+     *
+     * Calling activity_header::export_for_template() here would add completion actions as a side effect.
+     *
+     * @return string
+     */
+    public static function get_activity_header_description(): string {
+        global $PAGE;
+
+        $layoutoptions = $PAGE->layout_options['activityheader'] ?? [];
+        if (
+            empty($layoutoptions['nodescription'])
+            && !empty($PAGE->activityrecord->intro)
+            && trim($PAGE->activityrecord->intro)
+        ) {
+            return format_module_intro($PAGE->activityname, $PAGE->activityrecord, $PAGE->cm->id);
+        }
+
+        return '';
+    }
+
+    /**
+     * Render the activity header for learningmap modals.
+     *
+     * Since Moodle 5.2 the manual completion UI is rendered via the activity header.
+     * With linear navigation (introduced in Moodle 5.3), the interactive toggle may be
+     * moved to the sticky footer. Modals have no sticky footer, so we inject a fallback
+     * toggle into the header actions when needed.
+     *
+     * @param array $activityheaderdata Exported activity header template data.
+     * @return string
+     */
+    public static function render_activity_header_for_modal(array $activityheaderdata): string {
+        global $PAGE, $OUTPUT;
+
+        $headerhtml = $OUTPUT->render_from_template('core/activity_header', $activityheaderdata);
+
+        $headeractions = $PAGE->get_header_actions();
+        if (self::should_add_manual_completion_fallback($activityheaderdata, $headeractions)) {
+            $headeractions[] = $OUTPUT->render_from_template('core_course/completion_manual', $activityheaderdata);
+        }
+
+        if (!empty($headeractions)) {
+            $headerhtml .= $OUTPUT->render_from_template('mod_learningmap/modal_header_actions', [
+                'headeractions' => $headeractions,
+            ]);
+        }
+
+        return $headerhtml;
+    }
+
+    /**
+     * Check whether a manual completion fallback button should be rendered.
+     *
+     * @param array $activityheaderdata Exported activity header template data.
+     * @param array $headeractions Collected page header actions.
+     * @return bool
+     */
+    private static function should_add_manual_completion_fallback(array $activityheaderdata, array $headeractions): bool {
+        if (empty($activityheaderdata['showmanualcompletion']) || empty($activityheaderdata['istrackeduser'])) {
+            return false;
+        }
+
+        foreach ($headeractions as $headeraction) {
+            if (str_contains($headeraction, 'data-action="toggle-manual-completion"')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Returns whether the map should be shown on the course page.
      *
      * If course format format_learningmap is being used the module setting will be ignored.
