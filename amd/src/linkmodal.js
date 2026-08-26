@@ -14,7 +14,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 import Modal from 'core/modal';
+import ModalEvents from 'core/modal_events';
 import Ajax from 'core/ajax';
+import Templates from 'core/templates';
 import * as manualcompletion from 'core_course/manual_completion_toggle';
 import {renderLearningmap} from 'mod_learningmap/renderer';
 import CourseEvents from 'core_course/events';
@@ -84,9 +86,15 @@ export const openModal = async(event, learningmapcmid, inmodal) => {
             let js = Array.from(container.querySelectorAll('script'))
                 .map(s => s.textContent || '')
                 .join('\n');
+
+            const modalbody = await Templates.renderForPromise('mod_learningmap/modal_body', {
+                completion: data.completion,
+                content: data.html,
+            });
+
             const modal = await Modal.create({
                 title: data.name,
-                body: data.completion + data.html,
+                body: modalbody.html,
                 show: false,
                 removeOnClose: true,
                 large: true,
@@ -94,8 +102,12 @@ export const openModal = async(event, learningmapcmid, inmodal) => {
             modal.bodyJS = js;
             modal.show();
             manualcompletion.init();
-            document.addEventListener(CourseEvents.manualCompletionToggled, () => {
+            const completionToggleHandler = () => {
                 renderLearningmap(learningmapcmid, inmodal);
+            };
+            document.addEventListener(CourseEvents.manualCompletionToggled, completionToggleHandler);
+            modal.getRoot().on(ModalEvents.hidden, () => {
+                document.removeEventListener(CourseEvents.manualCompletionToggled, completionToggleHandler);
             });
         }
     }
