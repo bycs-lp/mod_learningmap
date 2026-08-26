@@ -26,7 +26,27 @@ import Log from 'core/log';
 import Pending from 'core/pending';
 
 export const selectors = {
-    LEARNINGMAP_RENDER_CONTAINER_PREFIX: 'learningmap-render-container-'
+    LEARNINGMAP_RENDER_CONTAINER_PREFIX: 'learningmap-render-container-',
+    MODAL_BODY: '.modal-body',
+    MODAL_COMPLETION_CONTAINER: '[data-region="learningmap-modal-completion"]',
+};
+
+/**
+ * Replace the completion header in the learningmap modal.
+ *
+ * @param {Element} modalTargetDiv The learningmap render container inside the modal.
+ * @param {string} completionHtml The new completion header HTML.
+ */
+const replaceModalCompletionHeader = (modalTargetDiv, completionHtml) => {
+    const modalBody = modalTargetDiv.closest(selectors.MODAL_BODY);
+    if (!modalBody) {
+        return;
+    }
+
+    const completionContainer = modalBody.querySelector(selectors.MODAL_COMPLETION_CONTAINER);
+    if (completionContainer) {
+        completionContainer.innerHTML = completionHtml;
+    }
 };
 
 /**
@@ -67,7 +87,7 @@ export const renderLearningmap = (cmId) => {
         targetDiv = document.getElementById(selectors.LEARNINGMAP_RENDER_CONTAINER_PREFIX + cmId + '-modal');
         if (targetDiv) {
             targetDiv.replaceChildren(svgnode);
-            targetDiv.parentElement.previousElementSibling.outerHTML = data.completion;
+            replaceModalCompletionHeader(targetDiv, data.completion);
         }
         return true;
     }).catch((error) => {
