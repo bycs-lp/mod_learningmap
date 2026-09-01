@@ -16,6 +16,8 @@
 
 namespace mod_learningmap;
 
+use core\clock;
+use mod_learningmap\task\fill_backlink_cache;
 use stdClass;
 
 /**
@@ -224,5 +226,41 @@ final class mod_learningmap_backlink_cache_test extends \advanced_testcase {
 
         $descriptionafter = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
         $this->assertEquals($descriptionbefore, $descriptionafter);
+    }
+
+    /**
+     * Tests if the nightly task only runs the whole rebuild every 24h.
+     *
+     * @covers \mod_learningmap\task\fill_backlink_cache
+     */
+    public function test_backlink_cache_rebuild_task(): void {
+        $this->resetAfterTest();
+        $cache = \cache::make('mod_learningmap', 'backlinks');
+        // Set clock to current time.
+        $clock = $this->mock_clock_with_frozen(time());
+        $task = new fill_backlink_cache();
+        ob_start();
+        $task->execute();
+        $output = ob_get_contents();
+        ob_end_clean();
+        $this->assertStringContainsString('Building backlink cache started', $output);
+
+        // We now have built the backlink cache.
+        // We reset the clock to a time which is less than 24h hours in the future.
+        $clock->set_to($clock->time() + 23 * 60 * 60);
+
+        ob_start();
+        $task->execute();
+        $output = ob_get_contents();
+        ob_end_clean();
+        $this->assertStringContainsString('Backlink cache is already filled within the last 24 hours', $output);
+
+        // We reset the clock to a time which is more than 24h hours in the future.
+        $clock->set_to($clock->time() + 25 * 60 * 60);
+        ob_start();
+        $task->execute();
+        $output = ob_get_contents();
+        ob_end_clean();
+        $this->assertStringContainsString('Building backlink cache started', $output);
     }
 }
