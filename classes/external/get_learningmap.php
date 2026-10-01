@@ -90,7 +90,7 @@ class get_learningmap extends external_api {
         global $PAGE, $OUTPUT;
         $params = self::validate_parameters(self::execute_parameters(), ['cmId' => $cmid]);
         $cmid = $params['cmId'];
-        [$course, $cminfo] = get_course_and_cm_from_cmid($cmid);
+        [$course, $cminfo] = get_course_and_cm_from_cmid($cmid, 'learningmap');
         $context = context_module::instance($cmid);
         // Don't render learningmap if not available and user has no override capability.
         if (!$cminfo->available && !has_capability('moodle/course:ignoreavailabilityrestrictions', $context)) {
