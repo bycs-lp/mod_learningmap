@@ -326,6 +326,10 @@ class mod_learningmap_mod_form extends moodleform_mod {
             );
             $mapworker->replace_stylesheet();
             $data->svgcode = $mapworker->get_svgcode();
+            // Unparsable code is emptied by svgmap, don't save an empty map.
+            if (!$mapworker->has_valid_root()) {
+                throw new moodle_exception('invaliddata', 'error');
+            }
 
             $data->svgcode = file_rewrite_urls_to_pluginfile(
                 $data->svgcode,
