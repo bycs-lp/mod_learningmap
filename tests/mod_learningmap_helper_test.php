@@ -16,6 +16,9 @@
 
 namespace mod_learningmap;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(helper::class)]
+#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'repair_learningmap_record')]
+#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'render_activity_header_for_modal')]
 /**
  * Tests for Learning map helper class
  *
@@ -25,9 +28,6 @@ namespace mod_learningmap;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \mod_learningmap\helper
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(helper::class)]
-#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'repair_learningmap_record')]
-#[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'render_activity_header_for_modal')]
 final class mod_learningmap_helper_test extends \advanced_testcase {
     /**
      * Tests the repair_learningmap_record method.
