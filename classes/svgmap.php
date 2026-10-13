@@ -31,6 +31,51 @@ use DOMXPath;
  */
 class svgmap {
     /**
+     * Namespace of SVG elements.
+     * @var string
+     */
+    const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+    /**
+     * Elements that are removed from the SVG (compared case-insensitively by local name, regardless of prefix).
+     * A learning map never contains any of them.
+     *
+     * - Scripting and event handling: script, handler, listener.
+     * - Foreign content that the HTML parser treats as HTML or MathML: foreignobject, math.
+     * - Embedding of other documents: iframe, frame, frameset, embed, object, applet.
+     * - Document level elements: base, link, meta.
+     * - Animation elements that can set attributes (e.g. href) at runtime: animate, animatecolor, animatemotion,
+     *   animatetransform, set.
+     * - HTML elements that break out of SVG when the map is printed inline into HTML (view.php).
+     * @var array
+     */
+    const DENIED_ELEMENTS = [
+        'script', 'handler', 'listener',
+        'foreignobject', 'math',
+        'iframe', 'frame', 'frameset', 'embed', 'object', 'applet',
+        'base', 'link', 'meta',
+        'animate', 'animatecolor', 'animatemotion', 'animatetransform', 'set',
+        'b', 'big', 'blockquote', 'body', 'br', 'center', 'code', 'dd', 'div', 'dl', 'dt', 'em', 'font',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'i', 'img', 'li', 'listing', 'menu', 'nobr', 'ol', 'p',
+        'pre', 'ruby', 's', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'table', 'tt', 'u', 'ul', 'var',
+    ];
+    /**
+     * Attributes that contain a URL (compared case-insensitively by local name, regardless of prefix and namespace).
+     * Their values are checked by is_allowed_url().
+     *
+     * - href: links, images and use elements (also xlink:href or any other prefix bound to XLink).
+     * - base: xml:base, which changes the base of relative URLs.
+     * - src, data, action, formaction: HTML attributes that load or submit to a URL.
+     * - from, to, values: animation values that can contain a URL.
+     * @var array
+     */
+    const URL_ATTRIBUTES = ['href', 'base', 'src', 'data', 'action', 'formaction', 'from', 'to', 'values'];
+    /**
+     * URL schemes that are allowed in URL attributes. URLs without scheme (relative URLs, fragments like #checkmark
+     * and @@PLUGINFILE@@ placeholders) are always allowed, data URLs only for raster images (see is_allowed_url()).
+     * @var array
+     */
+    const ALLOWED_URL_SCHEMES = ['http', 'https'];
+    /**
      * DOMDocument for parsing the SVG
      * @var DOMDocument
      */
@@ -65,22 +110,221 @@ class svgmap {
         $this->svgcode = $svgcode;
         $this->placestore = $placestore;
 
+        $this->reset_dom();
+        $this->load_dom();
+    }
+
+    /**
+     * Replaces the DOM by a new empty document.
+     *
+     * @return void
+     */
+    protected function reset_dom(): void {
         $this->dom = new \DOMDocument('1.0', 'UTF-8');
         $this->dom->preserveWhiteSpace = false;
         $this->dom->formatOutput = true;
-
-        $this->load_dom();
         $this->xpath = new \DOMXPath($this->dom);
     }
 
     /**
-     * Loads the code from svgcode attribute for DOM processing
+     * Loads the code from svgcode attribute for DOM processing and removes unsafe content.
+     *
+     * If the code cannot be parsed, svgcode and DOM are emptied (fail closed), so unparsed code is never returned.
      *
      * @return void
      */
     public function load_dom(): void {
         $this->remove_tags_before_svg();
-        $this->dom->loadXML($this->svgcode);
+        $loaded = false;
+        if (trim($this->svgcode) !== '') {
+            $loaded = $this->dom->loadXML($this->svgcode);
+        }
+        if ($loaded === false) {
+            // Fail closed: never keep unparsed code, as it would be returned unsanitized.
+            $this->svgcode = '';
+            $this->reset_dom();
+        } else {
+            // An existing DOMXPath does not see the newly loaded document.
+            $this->xpath = new \DOMXPath($this->dom);
+            $changed = $this->sanitize_dom();
+            // Write back only if something was removed, so clean maps stay byte-identical.
+            if ($changed) {
+                $this->svgcode = $this->dom->saveXML();
+                $this->remove_tags_before_svg();
+            }
+        }
+    }
+
+    /**
+     * Removes content from the DOM that could execute scripts in the browser.
+     *
+     * The map is rendered by an XML parser (course page) as well as by the HTML parser (inline in view.php),
+     * so names are compared case-insensitively and nodes that are interpreted differently by both parsers
+     * (comments, processing instructions, doctype) are removed and elements inside title and desc are unwrapped.
+     *
+     * @return bool true if the DOM was changed
+     */
+    public function sanitize_dom(): bool {
+        $changed = false;
+
+        // Collect nodes first and remove them afterwards, so the iteration is not affected by the removal.
+        $nodestoremove = [];
+        if ($this->dom->doctype !== null) {
+            $nodestoremove[] = $this->dom->doctype;
+        }
+        // Comments and processing instructions are ignored by the XML parser, but may contain markup for the HTML parser.
+        foreach ($this->xpath->query('//comment() | //processing-instruction()') as $node) {
+            $nodestoremove[] = $node;
+        }
+        foreach ($this->xpath->query('//*') as $element) {
+            // Compare the local name in lower case, as the HTML parser ignores case and prefix.
+            $name = strtolower($element->localName);
+            if (in_array($name, self::DENIED_ELEMENTS, true)) {
+                $nodestoremove[] = $element;
+            }
+        }
+        foreach ($nodestoremove as $node) {
+            if ($node->parentNode !== null) {
+                $node->parentNode->removeChild($node);
+                $changed = true;
+            }
+        }
+
+        // Query again, so removed elements are not processed.
+        $elements = [];
+        foreach ($this->xpath->query('//*') as $element) {
+            $elements[] = $element;
+        }
+        foreach ($elements as $element) {
+            $name = strtolower($element->localName);
+            if ($name === 'title' || $name === 'desc') {
+                $textchanged = $this->unwrap_child_elements($element);
+                if ($textchanged) {
+                    $changed = true;
+                }
+            }
+            $attributeschanged = $this->sanitize_attributes($element);
+            if ($attributeschanged) {
+                $changed = true;
+            }
+        }
+        return $changed;
+    }
+
+    /**
+     * Unwraps all child elements of a title or desc element (recursively), so only their text remains.
+     *
+     * The HTML parser treats title and desc as HTML integration points, so elements inside them could be
+     * interpreted as HTML. Text and CDATA nodes are kept, CDATA sections never reach the browser, because
+     * mapworker::get_svgcode() converts them to escaped text. Comments and denied elements are already removed
+     * by sanitize_dom().
+     *
+     * @param DOMElement $element title or desc element (or one of its child elements)
+     * @return bool true if the element was changed
+     */
+    protected function unwrap_child_elements(DOMElement $element): bool {
+        $childelements = [];
+        foreach ($element->childNodes as $child) {
+            if ($child->nodeType === XML_ELEMENT_NODE) {
+                $childelements[] = $child;
+            }
+        }
+        foreach ($childelements as $child) {
+            // Unwrap nested elements first, then move the remaining text and CDATA nodes in front of the child.
+            $this->unwrap_child_elements($child);
+            while ($child->firstChild !== null) {
+                $element->insertBefore($child->firstChild, $child);
+            }
+            $element->removeChild($child);
+        }
+        return count($childelements) > 0;
+    }
+
+    /**
+     * Removes event handler attributes and URL attributes with a URL that is not allowed.
+     *
+     * @param DOMElement $element
+     * @return bool true if an attribute was removed
+     */
+    protected function sanitize_attributes(DOMElement $element): bool {
+        $attributestoremove = [];
+        foreach ($element->attributes as $attribute) {
+            // The local name ignores the prefix (e.g. any prefix bound to XLink), the node name is what the HTML parser sees.
+            $localname = strtolower($attribute->localName);
+            $nodename = strtolower($attribute->nodeName);
+            $iseventhandler = false;
+            if (str_starts_with($localname, 'on')) {
+                $iseventhandler = true;
+            }
+            if (str_starts_with($nodename, 'on')) {
+                $iseventhandler = true;
+            }
+            if ($iseventhandler) {
+                $attributestoremove[] = $attribute;
+            } else if (in_array($localname, self::URL_ATTRIBUTES, true)) {
+                $isallowed = self::is_allowed_url($attribute->value);
+                if (!$isallowed) {
+                    $attributestoremove[] = $attribute;
+                }
+            }
+        }
+        foreach ($attributestoremove as $attribute) {
+            $element->removeAttributeNode($attribute);
+        }
+        return count($attributestoremove) > 0;
+    }
+
+    /**
+     * Checks whether a URL is allowed in the map.
+     *
+     * Allowed are URLs without scheme (relative URLs, fragments, @@PLUGINFILE@@ placeholders), URLs with a scheme
+     * from ALLOWED_URL_SCHEMES and data URLs of raster images. Whitespace and control characters are removed before
+     * the check, as browsers ignore them inside the scheme.
+     *
+     * @param string $url
+     * @return bool
+     */
+    public static function is_allowed_url(string $url): bool {
+        $allowed = false;
+        // Browsers ignore whitespace and control characters inside the scheme, so remove them before checking.
+        $withoutcontrolchars = preg_replace('/[\x00-\x20\x7F]+/', '', $url);
+        $normalized = strtolower($withoutcontrolchars);
+        $matches = [];
+        $hasscheme = preg_match('/^([a-z][a-z0-9+.\-]*):/', $normalized, $matches);
+        if ($hasscheme !== 1) {
+            // No scheme: relative URL, fragment or @@PLUGINFILE@@ placeholder.
+            $allowed = true;
+        } else {
+            $scheme = $matches[1];
+            if (in_array($scheme, self::ALLOWED_URL_SCHEMES, true)) {
+                $allowed = true;
+            } else if ($scheme === 'data') {
+                $israsterimage = preg_match('/^data:image\/(png|jpeg|gif|webp)[;,]/', $normalized);
+                if ($israsterimage === 1) {
+                    $allowed = true;
+                }
+            }
+        }
+        return $allowed;
+    }
+
+    /**
+     * Checks whether the document has a valid SVG root element (svg element in SVG namespace without prefix).
+     *
+     * @return bool
+     */
+    public function has_valid_root(): bool {
+        $valid = false;
+        $root = $this->dom->documentElement;
+        if ($root !== null) {
+            $isnamesvg = $root->localName === 'svg';
+            $isnamespacesvg = $root->namespaceURI === self::SVG_NAMESPACE;
+            $hasprefix = !empty($root->prefix);
+            if ($isnamesvg && $isnamespacesvg && !$hasprefix) {
+                $valid = true;
+            }
+        }
+        return $valid;
     }
 
     /**
@@ -127,6 +371,9 @@ class svgmap {
 
     /**
      * Returns the current svg code
+     *
+     * The code may still contain CDATA sections. Output it only via mapworker::get_svgcode(), which converts them
+     * to escaped text.
      *
      * @return string
      */
