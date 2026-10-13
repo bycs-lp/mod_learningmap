@@ -25,7 +25,6 @@ namespace mod_learningmap\external;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class external_test extends \advanced_testcase {
-    #[\PHPUnit\Framework\Attributes\Group('baseline')]
     #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
     /**
      * The web services only accept course modules of type learningmap.

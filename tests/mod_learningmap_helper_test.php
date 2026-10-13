@@ -23,6 +23,7 @@ namespace mod_learningmap;
  * @category   test
  * @copyright  2025 ISB Bayern
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \mod_learningmap\helper
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(helper::class)]
 #[\PHPUnit\Framework\Attributes\CoversMethod(helper::class, 'repair_learningmap_record')]
