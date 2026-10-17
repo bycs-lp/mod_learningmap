@@ -48,7 +48,8 @@ class mod_learningmap_mod_form extends moodleform_mod {
         // Gets only sections with content.
         foreach ($cm->get_sections() as $sectionnum => $section) {
             $sectioninfo = $cm->get_section_info($sectionnum);
-            $s['name'] = $sectioninfo->name;
+            // Not escaped here, the template escapes it.
+            $s['name'] = format_string($sectioninfo->name, true, ['context' => $this->context, 'escape' => false]);
             if (empty($s['name'])) {
                 $s['name'] = get_string('section') . ' ' . $sectionnum;
             }
