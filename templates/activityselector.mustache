@@ -68,7 +68,7 @@
     <div class="card-text">{{#str}} activity, core {{/str}}
     <select id="learningmap-activity-selector">
     {{#sections}}
-        <optgroup label="{{#shortentext}} 30, {{{name}}} {{/shortentext}}">
+        <optgroup label="{{#shortentext}} 30, {{name}} {{/shortentext}}">
         {{#coursemodules}}
         {{^completionenabled}}
         <option value="{{id}}" disabled class="learningmap-disabled-activity" title="{{#str}} nocompletionenabled, learningmap {{/str}}">{{#shortentext}} 30, {{{name}}} {{/shortentext}}</option>
