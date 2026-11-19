@@ -330,6 +330,15 @@ class mapworker {
     }
 
     /**
+     * Checks whether the processed map has a valid SVG root element.
+     *
+     * @return bool
+     */
+    public function has_valid_root(): bool {
+        return $this->svgmap->has_valid_root();
+    }
+
+    /**
      * Get attribute value (for unit testing)
      *
      * @param string $id The id of the DOM element
