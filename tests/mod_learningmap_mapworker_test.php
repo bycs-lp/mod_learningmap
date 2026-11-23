@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mod_learningmap;
+
 use mod_learningmap\completion\custom_completion;
 
 /**
