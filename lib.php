@@ -440,8 +440,7 @@ function learningmap_before_http_headers() {
         }
 
         if ($backlinktext) {
-            $description = helper::get_activity_header_description();
-            $PAGE->activityheader->set_description($description . $backlinktext);
+            $PAGE->add_header_action($backlinktext);
         }
     } catch (Exception $e) {
         debugging($e->getMessage());

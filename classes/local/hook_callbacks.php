@@ -29,7 +29,6 @@ use cache;
 use core\hook\output\before_http_headers;
 use Exception;
 use mod_learningmap\cachemanager;
-use mod_learningmap\helper;
 
 /**
  * Hook callbacks for mod_learningmap.
@@ -100,8 +99,7 @@ class hook_callbacks {
             }
 
             if ($backlinktext) {
-                $description = helper::get_activity_header_description();
-                $PAGE->activityheader->set_description($description . $backlinktext);
+                $PAGE->add_header_action($backlinktext);
             }
         } catch (Exception $e) {
             debugging($e->getMessage());

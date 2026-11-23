@@ -182,24 +182,28 @@ final class mod_learningmap_backlink_cache_test extends \advanced_testcase {
         // Test an activity that is part of the first learning map (with backlink enabled).
         $PAGE->set_cm($modinfo->get_cm($this->activities[0][0]->cmid));
         $PAGE->set_activity_record($this->activities[0][0]);
+        // Simulate an activity setting its own header description (e.g. mod_assign with intro attachments).
+        $PAGE->activityheader->set_description('Custom activity description');
 
-        $descriptionbefore = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
+        $this->assertEmpty($PAGE->get_header_actions());
         learningmap_before_http_headers();
 
-        $descriptionafter = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
-        $this->assertNotEquals($descriptionbefore, $descriptionafter);
-        $this->assertTrue(str_contains($descriptionafter, $this->learningmaps[0]->cmid));
+        $headeractions = $PAGE->get_header_actions();
+        $this->assertCount(1, $headeractions);
+        $this->assertTrue(str_contains($headeractions[0], $this->learningmaps[0]->cmid));
+        // The description set by the activity must not be touched.
+        $this->assertEquals(
+            'Custom activity description',
+            $PAGE->activityheader->export_for_template($OUTPUT)['description']
+        );
 
         // Test an activity that is part of the second learning map (with backlink disabled).
         $PAGE = new \moodle_page();
         $PAGE->set_cm($modinfo->get_cm($this->activities[1][1]->cmid));
         $PAGE->set_activity_record($this->activities[1][1]);
 
-        $descriptionbefore = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
         learningmap_before_http_headers();
-
-        $descriptionafter = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
-        $this->assertEquals($descriptionbefore, $descriptionafter);
+        $this->assertEmpty($PAGE->get_header_actions());
 
         // Test an activity that is part of the second course (without any learning maps).
         $PAGE = new \moodle_page();
@@ -207,11 +211,8 @@ final class mod_learningmap_backlink_cache_test extends \advanced_testcase {
         $PAGE->set_cm($modinfo->get_cm($this->activities[3][0]->cmid));
         $PAGE->set_activity_record($this->activities[3][0]);
 
-        $descriptionbefore = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
         learningmap_before_http_headers();
-
-        $descriptionafter = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
-        $this->assertEquals($descriptionbefore, $descriptionafter);
+        $this->assertEmpty($PAGE->get_header_actions());
 
         // Learningmap is invisible for the user. Backlink should not be generated.
         $PAGE = new \moodle_page();
@@ -219,10 +220,7 @@ final class mod_learningmap_backlink_cache_test extends \advanced_testcase {
         $PAGE->set_cm($modinfo->get_cm($this->activities[2][1]->cmid));
         $PAGE->set_activity_record($this->activities[2][1]);
 
-        $descriptionbefore = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
         learningmap_before_http_headers();
-
-        $descriptionafter = $PAGE->activityheader->export_for_template($OUTPUT)['description'];
-        $this->assertEquals($descriptionbefore, $descriptionafter);
+        $this->assertEmpty($PAGE->get_header_actions());
     }
 }

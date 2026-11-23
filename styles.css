@@ -137,10 +137,7 @@
 .learningmap-icon:before {
     content: 'A';
     padding-right: 0.5rem;
-}
-
-.learningmap-backlink {
-    padding-top: 1rem;
+    vertical-align: middle;
 }
 
 .learningmap-container {
